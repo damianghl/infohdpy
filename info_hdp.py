@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import stats, special
 from scipy.optimize import minimize
-from scipy import optimize
+from scipy import optimize, integrate
 from typing import List, Tuple, Union
 class InfoHDP:
     @staticmethod
