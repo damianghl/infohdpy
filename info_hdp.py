@@ -1,8 +1,8 @@
 import numpy as np
 from scipy import stats, special
 from scipy.optimize import minimize
-from typing import List, Tuple
-
+from scipy import optimize
+from typing import List, Tuple, Union
 class InfoHDP:
     @staticmethod
     def strue(p):
@@ -126,3 +126,177 @@ class InfoHDP:
                 InfoHDP.snaive(nn, dkmzY) - 
                 InfoHDP.snaive(nn, dkmz))
 
+    @staticmethod
+    def logLa(x: float, n: int, k: int) -> float:
+        """
+        Compute the log-likelihood for alpha (NSB).
+        
+        Args:
+            x (float): Alpha value.
+            n (int): Total number of samples.
+            k (int): Number of unique samples.
+        
+        Returns:
+            float: Log-likelihood for alpha.
+        """
+        return (k - 1) * np.log(x) + special.gammaln(1 + x) - special.gammaln(n + x)
+
+    @staticmethod
+    def asol(nn: int, k: int) -> float:
+        """
+        Solve for alpha (NSB).
+        
+        Args:
+            nn (int): Total number of samples.
+            k (int): Number of unique samples.
+        
+        Returns:
+            float: Solved alpha value.
+        """
+        x1 = nn * (k / nn) ** (3/2) / np.sqrt(2 * (1 - k/nn))
+        
+        def objective(x):
+            return (k - 1) / x + special.polygamma(0, 1 + x) - special.polygamma(0, nn + x)
+        
+        result = optimize.root_scalar(objective, x0=x1, x1=x1*1.1)
+        return result.root
+
+    @staticmethod
+    def Spost(x: float, nn: int, dkm: List[Tuple[int, int]]) -> float:
+        """
+        Compute posterior entropy (NSB).
+        
+        Args:
+            x (float): Alpha value.
+            nn (int): Total number of samples.
+            dkm (List[Tuple[int, int]]): Frequency of frequencies.
+        
+        Returns:
+            float: Posterior entropy.
+        """
+        return (special.polygamma(0, nn + x + 1) - 
+                (1 / (x + nn)) * sum(count * freq * special.polygamma(0, freq + 1) for freq, count in dkm))
+
+    @staticmethod
+    def Sint(sam: np.ndarray) -> Tuple[float, float]:
+        """
+        Compute NSB entropy estimate with integration.
+        
+        Args:
+            sam (np.ndarray): Sample data.
+        
+        Returns:
+            Tuple[float, float]: Estimated entropy and its standard deviation.
+        """
+        nn = len(sam)
+        dkmz = InfoHDP.dkm2(sam)
+        kz = len(np.unique(sam))
+        az = InfoHDP.asol(nn, kz)
+        
+        def integrand(log_x):
+            x = np.exp(log_x)
+            return InfoHDP.Spost(x, nn, dkmz) * np.exp(InfoHDP.logLa(x, nn, kz))
+        
+        result = integrate.quad(integrand, np.log(az/10), np.log(az*10))
+        sint = result[0]
+        dsint = np.sqrt(result[1])  # Approximating standard deviation as sqrt of absolute error
+        
+        return sint, dsint
+
+    @staticmethod
+    def Insb(sam: np.ndarray) -> Tuple[float, float, float, float]:
+        """
+        Compute NSB mutual information estimate.
+        
+        Args:
+            sam (np.ndarray): Sample data.
+        
+        Returns:
+            Tuple[float, float, float, float]: NSB MI estimate, Sx, Sy, Sxy.
+        """
+        samxz = np.abs(sam)
+        samyz = np.sign(sam)
+        
+        sx, _ = InfoHDP.Sint(samxz)
+        sy, _ = InfoHDP.Sint(samyz)
+        sxy, _ = InfoHDP.Sint(sam)
+        
+        insb = sx + sy - sxy
+        return insb, sx, sy, sxy
+
+    @staticmethod
+    def n10sam(sam: np.ndarray) -> List[List[int]]:
+        """
+        Compute n10 statistics from samples.
+        
+        Args:
+            sam (np.ndarray): Sample data.
+        
+        Returns:
+            List[List[int]]: n10 statistics.
+        """
+        samx = np.abs(sam)
+        unique, counts = np.unique(samx, return_counts=True)
+        n10 = [[np.sum(sam == x), np.sum(sam == -x)] for x in unique]
+        return n10
+
+    @staticmethod
+    def logLb(b: float, kx: int, n10: List[List[int]], noprior: float = 0.) -> float:
+        """
+        Compute log-likelihood for beta.
+        
+        Args:
+            b (float): Beta value.
+            kx (int): Number of unique X samples.
+            n10 (List[List[int]]): n10 statistics.
+            noprior (float): Prior weight.
+        
+        Returns:
+            float: Log-likelihood for beta.
+        """
+        ll = (kx * (special.gammaln(2*b) - 2*special.gammaln(b)) + 
+              sum(special.gammaln(b + n1) + special.gammaln(b + n0) - special.gammaln(2*b + n1 + n0) 
+                  for n1, n0 in n10))
+        if noprior != 1:
+            ll += np.log(b) + np.log(2*special.polygamma(1, 2*b+1) - special.polygamma(1, b+1))
+        return ll
+
+    @staticmethod
+    def bsol(kx: int, n10: List[List[int]], noprior: float = 0.) -> float:
+        """
+        Solve for beta.
+        
+        Args:
+            kx (int): Number of unique X samples.
+            n10 (List[List[int]]): n10 statistics.
+            noprior (float): Prior weight.
+        
+        Returns:
+            float: Solved beta value.
+        """
+        def objective(log_b):
+            return -InfoHDP.logLb(np.exp(log_b), kx, n10, noprior)
+        
+        result = optimize.minimize_scalar(objective, bounds=(-10, 10), method='bounded')
+        return np.exp(result.x)
+
+    @staticmethod
+    def SYconX(x: float, bb: float, nn: int, n10: List[List[int]]) -> float:
+        """
+        Compute conditional entropy S(Y|X).
+        
+        Args:
+            x (float): Alpha value.
+            bb (float): Beta value.
+            nn (int): Total number of samples.
+            n10 (List[List[int]]): n10 statistics.
+        
+        Returns:
+            float: Conditional entropy S(Y|X).
+        """
+        return ((x / (x + nn)) * (special.polygamma(0, 2*bb+1) - special.polygamma(0, bb+1)) + 
+                (1 / (x + nn)) * sum((n1 + n0) * (special.polygamma(0, n1 + n0 + 2*bb + 1) - 
+                                                  (n1 + bb) / (n1 + n0 + 2*bb) * special.polygamma(0, n1 + bb + 1) -
+                                                  (n0 + bb) / (n1 + n0 + 2*bb) * special.polygamma(0, n0 + bb + 1))
+                                     for n1, n0 in n10))
+        
