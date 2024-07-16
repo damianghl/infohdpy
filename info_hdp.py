@@ -303,6 +303,25 @@ class InfoHDP:
         
     @staticmethod
     def gen_nasty_pij(alfa, psure, type=1, ndist=1, Ns=10000):
+        """
+        Generate a matrix of probabilities pij.
+
+        This function generates a matrix of probabilities pij based on the given parameters.
+        The matrix represents the probabilities of two events occurring simultaneously.
+
+        Args:
+            alfa (float): The value of alfa.
+            psure (float): The value of psure.
+            type (int, optional): The type of distribution. Defaults to 1.
+            ndist (int, optional): The number of distributions. Defaults to 1.
+            Ns (int, optional): The number of samples. Defaults to 10000.
+
+        Raises:
+            ValueError: If an invalid type is provided.
+
+        Returns:
+            numpy.ndarray: The matrix of probabilities pij.
+        """
         alist = np.full(Ns, alfa / Ns)
         if type == 1:
             prdel = [0.25, 0.5, 0.25]
