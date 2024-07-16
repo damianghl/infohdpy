@@ -3,6 +3,7 @@ from scipy import stats, special
 from scipy.optimize import minimize
 from scipy import optimize, integrate
 from typing import List, Tuple, Union
+
 class InfoHDP:
     @staticmethod
     def strue(p):
@@ -300,3 +301,257 @@ class InfoHDP:
                                                   (n0 + bb) / (n1 + n0 + 2*bb) * special.polygamma(0, n0 + bb + 1))
                                      for n1, n0 in n10))
         
+    @staticmethod
+    def gen_nasty_pij(alfa, psure, type=1, ndist=1, Ns=10000):
+        alist = np.full(Ns, alfa / Ns)
+        if type == 1:
+            prdel = [0.25, 0.5, 0.25]
+        elif type == 2:
+            prdel = [1/3, 1/3, 1/3]
+        else:
+            raise ValueError("Invalid type")
+        
+        bes = np.random.choice([psure, 0.5, 1 - psure], size=Ns, p=prdel)
+        pi = np.random.dirichlet(alist, size=ndist)
+        pi = np.column_stack((pi, 1 - np.sum(pi, axis=1)))
+        
+        pij = np.zeros((ndist, 2 * Ns))
+        for k in range(ndist):
+            pij[k, ::2] = pi[k] * bes
+            pij[k, 1::2] = pi[k] * (1 - bes)
+        
+        return pij
+    
+    @staticmethod
+    def gen_nasty_pij2(psure, type=2, ndist=1, Ns=10000):
+        if type == 1:
+            prdel = [0.25, 0.5, 0.25]
+        elif type == 2:
+            prdel = [1/3, 1/3, 1/3]
+        else:
+            raise ValueError("Invalid type")
+        
+        bes = np.random.choice([psure, 0.5, 1 - psure], size=Ns, p=prdel)
+        pi = np.full((ndist, Ns), 1 / Ns)
+        
+        pij = np.zeros((ndist, 2 * Ns))
+        for k in range(ndist):
+            pij[k, ::2] = pi[k] * bes
+            pij[k, 1::2] = pi[k] * (1 - bes)
+        
+        return pij
+    
+    @staticmethod
+    def D2expalogL(ex, n, k):
+        return np.exp(ex) * (special.digamma(1 + np.exp(ex)) - special.digamma(np.exp(ex) + n) + 
+                            np.exp(ex) * (special.polygamma(1, 1 + np.exp(ex)) - special.polygamma(1, np.exp(ex) + n)))
+
+    @staticmethod
+    def intEa(xx, nz, kz, nsig=3):
+        sigea = np.sqrt(-InfoHDP.D2expalogL(np.log(xx), nz, kz))
+        ead = np.log(xx) - nsig * sigea
+        eau = np.log(xx) + nsig * sigea
+        return ead, eau
+    
+    @classmethod
+    def InsbCon(cls, sam):
+        nn = len(sam)
+        samxz = np.abs(sam)
+        samx1z = sam[sam > 0]
+        samx0z = sam[sam < 0]
+        nn1 = len(samx1z)
+        nn0 = len(samx0z)
+        
+        sx = cls.Sint(samxz)[0]
+        sx1 = cls.Sint(samx1z)[0]
+        sx0 = cls.Sint(samx0z)[0]
+        
+        insb = sx - (sx1 * nn1 + sx0 * nn0) / nn
+        return insb, sx, sx1, sx0
+    
+    @staticmethod
+    def bsolE(kx, n10):
+        def objective(x):
+            exp_x = np.exp(x)
+            return 1 + exp_x * (2 * kx * (special.digamma(2 * exp_x) - special.digamma(exp_x)) +
+                                (4 * special.polygamma(2, 2 * exp_x + 1) - special.polygamma(2, exp_x + 1)) /
+                                (2 * special.polygamma(1, 2 * exp_x + 1) - special.polygamma(1, exp_x + 1)) +
+                                np.sum(special.digamma(exp_x + n10[:, 0]) + special.digamma(exp_x + n10[:, 1]) -
+                                    2 * special.digamma(2 * exp_x + n10[:, 0] + n10[:, 1])))
+        
+        result = optimize.root_scalar(objective, x0=1, method='newton')
+        return np.exp(result.root)
+    
+    @classmethod
+    def IhdpMAP(cls, sam, onlyb=0, noprior=0):
+        nn = len(sam)
+        a1 = 0
+        
+        if onlyb != 1:
+            kk = len(np.unique(sam))
+            a1 = cls.asol(nn, kk)
+        
+        samx = np.abs(sam)
+        kx = len(np.unique(samx))
+        n10 = cls.n10sam(sam)
+        b1 = cls.bsol(kx, n10, noprior)
+        
+        sy = cls.smaxlik(np.sign(sam))
+        sycx = cls.SYconX(a1, b1, nn, n10)
+        
+        ihdp = sy - sycx
+        return ihdp
+    
+    @staticmethod
+    def D2expblogL(eb, kx, n10, noprior=0):
+        exp_eb = np.exp(eb)
+        result = kx * (2 * exp_eb * special.digamma(2 * exp_eb) - 
+                    2 * (exp_eb * special.digamma(exp_eb) + exp_eb**2 * special.polygamma(1, exp_eb)) + 
+                    4 * exp_eb**2 * special.polygamma(1, 2 * exp_eb))
+        
+        for ni1, ni0 in n10:
+            result += (-2 * exp_eb * special.digamma(2 * exp_eb + ni1 + ni0) +
+                    exp_eb * special.digamma(exp_eb + ni0) +
+                    exp_eb * special.digamma(exp_eb + ni1) -
+                    4 * exp_eb**2 * special.polygamma(1, 2 * exp_eb + ni1 + ni0) +
+                    exp_eb**2 * special.polygamma(1, exp_eb + ni0) +
+                    exp_eb**2 * special.polygamma(1, exp_eb + ni1))
+        
+        if noprior != 1:
+            result += (-(exp_eb * special.polygamma(2, 1 + exp_eb) - 4 * exp_eb * special.polygamma(2, 1 + 2 * exp_eb))**2 /
+                    (-special.polygamma(1, 1 + exp_eb) + 2 * special.polygamma(1, 1 + 2 * exp_eb))**2 +
+                    (-exp_eb * special.polygamma(2, 1 + exp_eb) + 4 * exp_eb * special.polygamma(2, 1 + 2 * exp_eb) -
+                        exp_eb**2 * special.polygamma(3, 1 + exp_eb) + 8 * exp_eb**2 * special.polygamma(3, 1 + 2 * exp_eb)) /
+                    (-special.polygamma(1, 1 + exp_eb) + 2 * special.polygamma(1, 1 + 2 * exp_eb)))
+        
+        return result
+    
+    @classmethod
+    def intEb(cls, bx, kx, n10, nsig=3, noprior=0):
+        sigeb = np.sqrt(-cls.D2expblogL(np.log(bx), kx, n10, noprior))
+        ebd = np.log(bx) - nsig * sigeb
+        ebu = np.log(bx) + nsig * sigeb
+        return ebd, ebu
+    
+    @classmethod
+    def IhdpIntb(cls, sam, onlyb=0, noprior=0):
+        nn = len(sam)
+        az = 0
+        
+        if onlyb != 1:
+            kk = len(np.unique(sam))
+            az = cls.asol(nn, kk)
+        
+        samx = np.abs(sam)
+        kx = len(np.unique(samx))
+        n10 = cls.n10sam(sam)
+        bz = cls.bsol(kx, n10, noprior)
+        sy = cls.smaxlik(np.sign(sam))
+        
+        logLbz = cls.logLb(bz, kx, n10, noprior)
+        ebd, ebu = cls.intEb(bz, kx, n10, 3, noprior)
+        listEb = np.linspace(ebd, ebu, 25)
+        listLogL = np.exp(cls.logLb(np.exp(listEb), kx, n10, noprior) - logLbz)
+        listLogL /= np.sum(listLogL)
+        
+        sint = np.sum([cls.SYconX(az, np.exp(eb), nn, n10) * ll for eb, ll in zip(listEb, listLogL)])
+        s2int = np.sum([cls.SYconX2(np.exp(eb), nn, n10) * ll for eb, ll in zip(listEb, listLogL)])
+        dsint = np.sqrt(s2int - sint**2)
+        
+        ihdp = sy - sint
+        return ihdp, dsint, sint
+
+
+    
+    @staticmethod
+    def genPriorPijT(alfa, beta, qy, Ns=10000):
+        alist = np.full(Ns, alfa / Ns)
+        pjdadoi = np.random.dirichlet(beta * qy, size=Ns)
+        pjdadoi = np.column_stack((pjdadoi, 1 - np.sum(pjdadoi, axis=1)))
+        pi = np.random.dirichlet(alist)
+        pi = np.append(pi, 1 - np.sum(pi))
+        pij = np.outer(pi, pjdadoi.T).T
+        return pi, pjdadoi, pij
+
+    @staticmethod
+    def genSamplesPriorT(pi, pjdadoi, M, Ns=10000):
+        Ny = pjdadoi.shape[1]
+        samx = np.random.choice(range(Ns), size=M, p=np.abs(pi))
+        sam = [(x, np.random.choice(range(Ny), p=np.abs(pjdadoi[x]))) for x in samx]
+        return sam
+    
+    @staticmethod
+    def nxysam(sam, Ny):
+        samx = [s[0] for s in sam]
+        tsamx = np.unique(samx)
+        nxy = [[sum(1 for s in sam if s[0] == x and s[1] == y) for y in range(Ny)] for x in tsamx]
+        return np.array(nxy)
+    
+    @staticmethod
+    def logLbT(b, qy, nxy):
+        kx, Ny = nxy.shape
+        ll = kx * (special.gammaln(b) - np.sum(special.gammaln(b * qy)))
+        ll += np.sum(np.sum(special.gammaln(1 + b * qy + nxy), axis=1) - special.gammaln(b + np.sum(nxy, axis=1)))
+        return ll
+    
+    @classmethod
+    def bsolT(cls, qy, nxy):
+        def objective(ebb):
+            return -cls.logLbT(np.exp(ebb), qy, nxy)
+        
+        result = optimize.minimize_scalar(objective, method='brent')
+        return np.exp(result.x)
+    
+    @staticmethod
+    def SYconXT(bb, nn, qy, nxy):
+        kx, Ny = nxy.shape
+        ss = 0
+        for i in range(kx):
+            ni_sum = np.sum(nxy[i])
+            ss += (ni_sum / nn) * (special.digamma(ni_sum + bb + 1) - 
+                                np.sum((bb * qy + nxy[i]) * special.digamma(1 + bb * qy + nxy[i])) / (ni_sum + bb))
+        return ss
+    
+    @classmethod
+    def IhdpMAPT(cls, sam, ML=0):
+        nn = len(sam)
+        ny = max(s[1] for s in sam) + 1
+        nxy = cls.nxysam(sam, ny)
+        
+        if ML == 1:
+            qye = np.sum(nxy, axis=0) / np.sum(nxy)
+        else:
+            qye = (np.sum(nxy, axis=0) + 1/ny) / (np.sum(nxy) + 1)
+        
+        b1 = cls.bsolT(qye, nxy)
+        sy = cls.strue(qye)
+        sycx = cls.SYconXT(b1, nn, qye, nxy)
+        ihdp = sy - sycx
+        return ihdp
+    
+    @classmethod
+    def InaiveT(cls, sam):
+        nn = len(sam)
+        samxz = [s[0] for s in sam]
+        samyz = [s[1] for s in sam]
+        
+        dkmz = cls.dkm2(sam)
+        dkmzX = cls.dkm2(samxz)
+        dkmzY = cls.dkm2(samyz)
+        
+        Iml = cls.snaive(nn, dkmzX) + cls.snaive(nn, dkmzY) - cls.snaive(nn, dkmz)
+        return Iml
+    
+    @classmethod
+    def InsbT(cls, sam):
+        nn = len(sam)
+        samxz = [s[0] for s in sam]
+        samyz = [s[1] for s in sam]
+        
+        sx, _ = cls.Sint(samxz)
+        sy, _ = cls.Sint(samyz)
+        sxy, _ = cls.Sint(sam)
+        
+        insb = sx + sy - sxy
+        return insb, sx, sy, sxy
+    
