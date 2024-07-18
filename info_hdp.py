@@ -192,18 +192,41 @@ class InfoHDP:
         nn = len(sam)
         dkmz = InfoHDP.dkm2(sam)
         kz = len(np.unique(sam))
-        az = InfoHDP.asol(nn, kz)
+        az = InfoHDP.asol(nn, kz) # checked
         
-        def integrand(log_x):
+        log_az = np.log(az)
+        lower_bound = log_az - 3  # Equivalent to log(az/10)
+        upper_bound = log_az + 3  # Equivalent to log(az*10)
+
+        def integrand_normalization(log_x):
+            return np.exp(InfoHDP.logLa(np.exp(log_x), nn, kz))
+
+        def integrand_weighted_spost(log_x):
             x = np.exp(log_x)
             return InfoHDP.Spost(x, nn, dkmz) * np.exp(InfoHDP.logLa(x, nn, kz))
-        
-        result = integrate.quad(integrand, np.log(az/10), np.log(az*10))
-        sint = result[0]
-        dsint = np.sqrt(result[1])  # Approximating standard deviation as sqrt of absolute error
-        
-        return sint, dsint
 
+        def integrand_weighted_spost2(log_x):
+            x = np.exp(log_x)
+            return (InfoHDP.Spost(x, nn, dkmz)**2) * np.exp(InfoHDP.logLa(x, nn, kz))
+
+        # Calculate normalization constant
+        norm_const, norm_error = integrate.quad(integrand_normalization, lower_bound, upper_bound)
+
+        # Calculate weighted integral of Spost
+        weighted_integral, weighted_error = integrate.quad(integrand_weighted_spost, lower_bound, upper_bound)
+
+        # Calculate weighted integral of Spost
+        weighted_integral2, weighted_error2 = integrate.quad(integrand_weighted_spost2, lower_bound, upper_bound)
+
+        # Normalize the result
+        sint = weighted_integral / norm_const
+        sint2 = weighted_integral2 / norm_const
+
+        # Estimate error (this is an approximation and may need refinement)
+        dsint = np.sqrt(sint2 - sint**2)
+
+        return sint, dsint
+    
     @staticmethod
     def Insb(sam: np.ndarray) -> Tuple[float, float, float, float]:
         """
