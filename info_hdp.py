@@ -1,7 +1,5 @@
 import numpy as np
-from scipy import stats, special
-from scipy.optimize import minimize
-from scipy import optimize, integrate
+from scipy import stats, special, integrate, optimize
 from typing import List, Tuple, Union
 
 class InfoHDP:
@@ -30,7 +28,7 @@ class InfoHDP:
     @staticmethod
     def gen_prior_pij(alpha: float, beta: float, ndist: int = 1, Ns: int = 10000) -> np.ndarray:
         """
-        Generate probability distributions.
+        Generate probability distributions using a Dirichlet for pi, and a Beta for pj|i.
         
         Args:
             alpha (float): Concentration parameter for Dirichlet process.
