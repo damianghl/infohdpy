@@ -178,6 +178,24 @@ class InfoHDP:
         return (special.polygamma(0, nn + x + 1) - 
                 (1 / (x + nn)) * sum(count * freq * special.polygamma(0, freq + 1) for freq, count in dkm))
 
+    @classmethod
+    def Smap(cls, sam: np.ndarray) -> float:
+        """
+        Calculates the maximum a posteriori entropy estimate (S_MAP).
+
+        Args:
+            sam (np.ndarray): Sample data.
+
+        Returns:
+            float: Maximum a posteriori entropy estimate.
+        """
+        nn = len(sam)
+        dkmz = cls.dkm2(sam)
+        kz = len(np.unique(sam))
+        az = cls.asol(nn, kz)
+        smap = cls.Spost(az, nn, dkmz)
+        return smap
+
     @staticmethod
     def Sint(sam: np.ndarray) -> Tuple[float, float]:
         """
@@ -327,23 +345,15 @@ class InfoHDP:
     @staticmethod
     def gen_nasty_pij(alfa, psure, type=1, ndist=1, Ns=10000):
         """
-        Generate a matrix of probabilities pij.
-
-        This function generates a matrix of probabilities pij based on the given parameters.
-        The matrix represents the probabilities of two events occurring simultaneously.
-
+        Generates probabilities pij such that q_i ~ DP(alfa_Ns) and q_j|i = {psure(Prob=0.25), 0.5(Prob=0.50), 1.-psure(Prob=0.25)}..
         Args:
-            alfa (float): The value of alfa.
-            psure (float): The value of psure.
-            type (int, optional): The type of distribution. Defaults to 1.
-            ndist (int, optional): The number of distributions. Defaults to 1.
-            Ns (int, optional): The number of samples. Defaults to 10000.
-
-        Raises:
-            ValueError: If an invalid type is provided.
-
+            alfa (float): Concentration parameter for Dirichlet process.
+            type (int): different ways to choose q_j|i.
+            ndist (int): Number of distributions to generate.
+            Ns (int): Number of states.
+        
         Returns:
-            numpy.ndarray: The matrix of probabilities pij.
+            np.ndarray: Probability distributions.
         """
         alist = np.full(Ns, alfa / Ns)
         if type == 1:
@@ -366,6 +376,17 @@ class InfoHDP:
     
     @staticmethod
     def gen_nasty_pij2(psure, type=2, ndist=1, Ns=10000):
+        """
+        Generates probabilities pij such that q_i ~ 1/Ns and q_j|i = {psure(Prob=0.25), 0.5(Prob=0.50), 1.-psure(Prob=0.25)}..
+        Args:
+            alfa (float): Concentration parameter for Dirichlet process.
+            type (int): different ways to choose q_j|i.
+            ndist (int): Number of distributions to generate.
+            Ns (int): Number of states.
+        
+        Returns:
+            np.ndarray: Probability distributions.
+        """
         if type == 1:
             prdel = [0.25, 0.5, 0.25]
         elif type == 2:
@@ -385,11 +406,38 @@ class InfoHDP:
     
     @staticmethod
     def D2expalogL(ex, n, k):
+        """
+        Calculates the second derivative of log-likelihood of alpha with respect to log(alpha).
+
+        This function is used to determine intervals for integration in the estimation process.
+
+        Args:
+            ex (float): Exponential of alpha value (exp(alpha)).
+            n (int): Total number of samples.
+            k (int): Number of unique samples.
+
+        Returns:
+            float: Second derivative of log-likelihood with respect to log(alpha).
+        """
         return np.exp(ex) * (special.digamma(1 + np.exp(ex)) - special.digamma(np.exp(ex) + n) + 
                             np.exp(ex) * (special.polygamma(1, 1 + np.exp(ex)) - special.polygamma(1, np.exp(ex) + n)))
 
     @staticmethod
     def intEa(xx, nz, kz, nsig=3):
+        """
+        Calculates the interval for integration in log(alpha).
+
+        This function determines the range over which to integrate when estimating alpha.
+
+        Args:
+            xx (float): Alpha value.
+            nz (int): Total number of samples.
+            kz (int): Number of unique samples.
+            nsig (float, optional): Number of standard deviations to use for the interval. Defaults to 3.
+
+        Returns:
+            Tuple[float, float]: Lower and upper bounds of the integration interval in log(alpha).
+        """
         sigea = np.sqrt(-InfoHDP.D2expalogL(np.log(xx), nz, kz))
         ead = np.log(xx) - nsig * sigea
         eau = np.log(xx) + nsig * sigea
@@ -397,6 +445,17 @@ class InfoHDP:
     
     @classmethod
     def InsbCon(cls, sam):
+        """
+        Calculates the NSB (Nemenman-Shafee-Bialek) estimate for mutual information I = S(X) - S(X|Y).
+
+        This method provides an alternative way to estimate mutual information compared to the standard NSB approach.
+
+        Args:
+            sam (np.ndarray): Sample data.
+
+        Returns:
+            Tuple[float, float, float, float]: Estimated mutual information, S(X), S(X|Y=1), and S(X|Y=0).
+        """
         nn = len(sam)
         samxz = np.abs(sam)
         samx1z = sam[sam > 0]
@@ -413,6 +472,18 @@ class InfoHDP:
     
     @staticmethod
     def bsolE(kx, n10):
+        """
+        Solves for the hyperparameter beta by searching in log(beta) space.
+
+        This method finds the optimal beta value that maximizes the likelihood of the observed data.
+
+        Args:
+            kx (int): Number of unique X samples.
+            n10 (np.ndarray): Array of counts for each state, where n10[i] = [n_i1, n_i0].
+
+        Returns:
+            float: Optimal beta value.
+        """
         def objective(x):
             exp_x = np.exp(x)
             return 1 + exp_x * (2 * kx * (special.digamma(2 * exp_x) - special.digamma(exp_x)) +
@@ -426,6 +497,19 @@ class InfoHDP:
     
     @classmethod
     def IhdpMAP(cls, sam, onlyb=0, noprior=0):
+        """
+        Calculates the MAP (Maximum A Posteriori) estimate of mutual information using InfoHDP.
+
+        This method provides an estimate of mutual information based on the InfoHDP approach.
+
+        Args:
+            sam (np.ndarray): Sample data.
+            onlyb (int, optional): If 1, uses only beta (no alpha, i.e., no pseudocounts). Defaults to 0.
+            noprior (int, optional): If 1, no prior is used for beta. Defaults to 0.
+
+        Returns:
+            float: Estimated mutual information.
+        """
         nn = len(sam)
         a1 = 0
         
@@ -446,6 +530,18 @@ class InfoHDP:
     
     @staticmethod
     def D2expblogL(eb, kx, n10, noprior=0):
+        """
+        Calculates the second derivative of log-likelihood of beta with respect to log(beta).
+
+        Args:
+            eb (float): Exponential of beta value.
+            kx (int): Number of unique X samples.
+            n10 (List[List[int]]): n10 statistics.
+            noprior (int, optional): If 1, no prior is used. Defaults to 0.
+
+        Returns:
+            float: Second derivative of log-likelihood.
+        """
         exp_eb = np.exp(eb)
         result = kx * (2 * exp_eb * special.digamma(2 * exp_eb) - 
                     2 * (exp_eb * special.digamma(exp_eb) + exp_eb**2 * special.polygamma(1, exp_eb)) + 
@@ -470,6 +566,19 @@ class InfoHDP:
     
     @classmethod
     def intEb(cls, bx, kx, n10, nsig=3, noprior=0):
+        """
+        Calculates the interval for integration in log(beta).
+
+        Args:
+            bx (float): Beta value.
+            kx (int): Number of unique X samples.
+            n10 (List[List[int]]): n10 statistics.
+            nsig (float, optional): Number of standard deviations. Defaults to 3.
+            noprior (int, optional): If 1, no prior is used. Defaults to 0.
+
+        Returns:
+            Tuple[float, float]: Lower and upper bounds of the integration interval.
+        """
         sigeb = np.sqrt(-cls.D2expblogL(np.log(bx), kx, n10, noprior))
         ebd = np.log(bx) - nsig * sigeb
         ebu = np.log(bx) + nsig * sigeb
@@ -477,6 +586,17 @@ class InfoHDP:
     
     @classmethod
     def IhdpIntb(cls, sam, onlyb=0, noprior=0):
+        """
+        Calculates the InfoHDP estimator by integrating over the peak of the posterior (only in beta).
+
+        Args:
+            sam (np.ndarray): Sample data.
+            onlyb (int, optional): If 1, only uses beta (no alpha). Defaults to 0.
+            noprior (int, optional): If 1, no prior is used. Defaults to 0.
+
+        Returns:
+            Tuple[float, float, float]: Estimated mutual information, standard deviation of the estimate, and estimated conditional entropy S(Y|X).
+        """
         nn = len(sam)
         az = 0
         
@@ -502,11 +622,21 @@ class InfoHDP:
         
         ihdp = sy - sint
         return ihdp, dsint, sint
-
-
     
     @staticmethod
     def genPriorPijT(alfa, beta, qy, Ns=10000):
+        """
+        Generates probabilities {pi, pj|i, pij} with prior and marginal qy.
+
+        Args:
+            alfa (float): Concentration parameter for Dirichlet process.
+            beta (float): Parameter for Beta distribution.
+            qy (List[float]): Marginal distribution for Y.
+            Ns (int, optional): Number of states. Defaults to 10000.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray, np.ndarray]: Tuple containing pi, pj|i, and pij.
+        """
         alist = np.full(Ns, alfa / Ns)
         pjdadoi = np.random.dirichlet(beta * qy, size=Ns)
         pjdadoi = np.column_stack((pjdadoi, 1 - np.sum(pjdadoi, axis=1)))
@@ -517,6 +647,18 @@ class InfoHDP:
 
     @staticmethod
     def genSamplesPriorT(pi, pjdadoi, M, Ns=10000):
+        """
+        Generates samples {state x, state y} given the probabilities.
+
+        Args:
+            pi (np.ndarray): Probability distribution for X.
+            pjdadoi (np.ndarray): Conditional probability distribution for Y given X.
+            M (int): Number of samples to generate.
+            Ns (int, optional): Number of states. Defaults to 10000.
+
+        Returns:
+            List[Tuple[int, int]]: List of tuples, each containing a sample (x, y).
+        """
         Ny = pjdadoi.shape[1]
         samx = np.random.choice(range(Ns), size=M, p=np.abs(pi))
         sam = [(x, np.random.choice(range(Ny), p=np.abs(pjdadoi[x]))) for x in samx]
@@ -524,6 +666,16 @@ class InfoHDP:
     
     @staticmethod
     def nxysam(sam, Ny):
+        """
+        Counts for each x that occurs, the number of y samples (result in matrix Kx x Ny).
+
+        Args:
+            sam (List[Tuple[int, int]]): List of samples, where each sample is a tuple (x, y).
+            Ny (int): Number of possible y values.
+
+        Returns:
+            np.ndarray: 2D numpy array of counts.
+        """
         samx = [s[0] for s in sam]
         tsamx = np.unique(samx)
         nxy = [[sum(1 for s in sam if s[0] == x and s[1] == y) for y in range(Ny)] for x in tsamx]
@@ -531,6 +683,17 @@ class InfoHDP:
     
     @staticmethod
     def logLbT(b, qy, nxy):
+        """
+        Gives the marginal log-likelihood for beta, given a marginal (estimated) qy.
+
+        Args:
+            b (float): Beta value.
+            qy (np.ndarray): Marginal distribution for Y.
+            nxy (np.ndarray): Count matrix from nxysam.
+
+        Returns:
+            float: Log-likelihood value.
+        """
         kx, Ny = nxy.shape
         ll = kx * (special.gammaln(b) - np.sum(special.gammaln(b * qy)))
         ll += np.sum(np.sum(special.gammaln(1 + b * qy + nxy), axis=1) - special.gammaln(b + np.sum(nxy, axis=1)))
@@ -538,6 +701,16 @@ class InfoHDP:
     
     @classmethod
     def bsolT(cls, qy, nxy):
+        """
+        Gives the beta that maximizes the marginal log-likelihood, given an estimated qy and counts.
+
+        Args:
+            qy (np.ndarray): Marginal distribution for Y.
+            nxy (np.ndarray): Count matrix from nxysam.
+
+        Returns:
+            float: Optimal beta value.
+        """
         def objective(ebb):
             return -cls.logLbT(np.exp(ebb), qy, nxy)
         
@@ -546,6 +719,18 @@ class InfoHDP:
     
     @staticmethod
     def SYconXT(bb, nn, qy, nxy):
+        """
+        Gives the posterior for the conditional entropy S(Y|X).
+
+        Args:
+            bb (float): Beta value.
+            nn (int): Total number of samples.
+            qy (np.ndarray): Marginal distribution for Y.
+            nxy (np.ndarray): Count matrix from nxysam.
+
+        Returns:
+            float: Posterior conditional entropy S(Y|X).
+        """
         kx, Ny = nxy.shape
         ss = 0
         for i in range(kx):
@@ -556,6 +741,16 @@ class InfoHDP:
     
     @classmethod
     def IhdpMAPT(cls, sam, ML=0):
+        """
+        Gives the MAP estimate of mutual information using InfoHDP.
+
+        Args:
+            sam (List[Tuple[int, int]]): List of samples, where each sample is a tuple (x, y).
+            ML (int, optional): If 1, use Maximum Likelihood estimation for qy; if 0, use posterior mean. Defaults to 0.
+
+        Returns:
+            float: Estimated mutual information.
+        """
         nn = len(sam)
         ny = max(s[1] for s in sam) + 1
         nxy = cls.nxysam(sam, ny)
@@ -573,6 +768,15 @@ class InfoHDP:
     
     @classmethod
     def InaiveT(cls, sam):
+        """
+        Gets the ML estimate for I(X;Y), assuming samples as a list of (x, y) tuples.
+
+        Args:
+            sam (List[Tuple[int, int]]): List of samples, where each sample is a tuple (x, y).
+
+        Returns:
+            float: ML estimate of mutual information.
+        """
         nn = len(sam)
         samxz = [s[0] for s in sam]
         samyz = [s[1] for s in sam]
@@ -586,6 +790,15 @@ class InfoHDP:
     
     @classmethod
     def InsbT(cls, sam):
+        """
+        Gives NSB estimate for I = S(X) + S(Y) - S(X,Y), assuming samples as a list of (x, y) tuples.
+
+        Args:
+            sam (List[Tuple[int, int]]): List of samples, where each sample is a tuple (x, y).
+
+        Returns:
+            Tuple[float, float, float, float]: Tuple containing (I, S(X), S(Y), S(X,Y)).
+        """
         nn = len(sam)
         samxz = [s[0] for s in sam]
         samyz = [s[1] for s in sam]
@@ -596,4 +809,96 @@ class InfoHDP:
         
         insb = sx + sy - sxy
         return insb, sx, sy, sxy
+    
+    @staticmethod
+    def varSYx(b, n0, n1):
+        """
+        Calculates the variance of S(Y|x) for fixed beta and a specific state x with counts n_x = n0 + n1.
+
+        Args:
+            b (float): Beta value.
+            n0 (int): Count for state 0.
+            n1 (int): Count for state 1.
+
+        Returns:
+            float: Variance of S(Y|x).
+        """
+        n = n0 + n1
+        term1 = (2 * (b + n1) * (b + n0)) / ((2*b + n) * (2*b + n + 1))
+        term1 *= ((special.digamma(b + n1 + 1) - special.digamma(2*b + n + 2)) *
+                  (special.digamma(b + n0 + 1) - special.digamma(2*b + n + 2)) -
+                  special.polygamma(1, 2*b + n + 2))
+        
+        term2 = ((b + n1) * (b + n1 + 1)) / ((2*b + n) * (2*b + n + 1))
+        term2 *= ((special.digamma(b + n1 + 2) - special.digamma(2*b + n + 2))**2 +
+                  special.polygamma(1, b + n1 + 2) - special.polygamma(1, 2*b + n + 2))
+        
+        term3 = ((b + n0) * (b + n0 + 1)) / ((2*b + n) * (2*b + n + 1))
+        term3 *= ((special.digamma(b + n0 + 2) - special.digamma(2*b + n + 2))**2 +
+                  special.polygamma(1, b + n0 + 2) - special.polygamma(1, 2*b + n + 2))
+        
+        term4 = (special.digamma(2*b + n + 1) -
+                 (b + n1) / (2*b + n) * special.digamma(b + n1 + 1) -
+                 (b + n0) / (2*b + n) * special.digamma(b + n0 + 1))**2
+        
+        return term1 + term2 + term3 - term4
+    
+    @staticmethod
+    def SYx2(b, n0, n1):
+        """
+        Calculates the second moment of S(Y|x) for fixed beta and a specific state x with counts n_x = n0 + n1.
+
+        Args:
+            b (float): Beta value.
+            n0 (int): Count for state 0.
+            n1 (int): Count for state 1.
+
+        Returns:
+            float: Second moment of S(Y|x).
+        """
+        n = n0 + n1
+        term1 = (2 * (b + n1) * (b + n0)) / ((2*b + n) * (2*b + n + 1))
+        term1 *= ((special.digamma(b + n1 + 1) - special.digamma(2*b + n + 2)) *
+                  (special.digamma(b + n0 + 1) - special.digamma(2*b + n + 2)) -
+                  special.polygamma(1, 2*b + n + 2))
+        
+        term2 = ((b + n1) * (b + n1 + 1)) / ((2*b + n) * (2*b + n + 1))
+        term2 *= ((special.digamma(b + n1 + 2) - special.digamma(2*b + n + 2))**2 +
+                  special.polygamma(1, b + n1 + 2) - special.polygamma(1, 2*b + n + 2))
+        
+        term3 = ((b + n0) * (b + n0 + 1)) / ((2*b + n) * (2*b + n + 1))
+        term3 *= ((special.digamma(b + n0 + 2) - special.digamma(2*b + n + 2))**2 +
+                  special.polygamma(1, b + n0 + 2) - special.polygamma(1, 2*b + n + 2))
+        
+        return term1 + term2 + term3
+    
+    @classmethod
+    def varSYconX(cls, bb, nn, n10):
+        """
+        Calculates the variance of S(Y|X) for fixed beta.
+
+        Args:
+            bb (float): Beta value.
+            nn (int): Total number of samples.
+            n10 (List[List[int]]): n10 statistics.
+
+        Returns:
+            float: Variance of S(Y|X).
+        """
+        return (1 / (nn**2)) * sum((n1 + n0)**2 * cls.varSYx(bb, n0, n1) for n1, n0 in n10)
+
+    @classmethod
+    def SYconX2(cls, bb, nn, n10):
+        """
+        Calculates the second moment of S(Y|X) for fixed beta.
+
+        Args:
+            bb (float): Beta value.
+            nn (int): Total number of samples.
+            n10 (List[List[int]]): n10 statistics.
+
+        Returns:
+            float: Second moment of S(Y|X).
+        """
+        return cls.varSYconX(bb, nn, n10) + (cls.SYconX(0., bb, nn, n10))**2
     
