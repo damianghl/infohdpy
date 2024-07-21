@@ -215,15 +215,15 @@ class InfoHDP:
         upper_bound = log_az + 3  # Equivalent to log(az*10)
 
         def integrand_normalization(log_x):
-            return np.exp(InfoHDP.logLa(np.exp(log_x), nn, kz))
+            return np.exp(InfoHDP.logLa(np.exp(log_x)-log_az, nn, kz))
 
         def integrand_weighted_spost(log_x):
             x = np.exp(log_x)
-            return InfoHDP.Spost(x, nn, dkmz) * np.exp(InfoHDP.logLa(x, nn, kz))
+            return InfoHDP.Spost(x, nn, dkmz) * np.exp(InfoHDP.logLa(x, nn, kz)-log_az)
 
         def integrand_weighted_spost2(log_x):
             x = np.exp(log_x)
-            return (InfoHDP.Spost(x, nn, dkmz)**2) * np.exp(InfoHDP.logLa(x, nn, kz))
+            return (InfoHDP.Spost(x, nn, dkmz)**2) * np.exp(InfoHDP.logLa(x, nn, kz)-log_az)
 
         # Calculate normalization constant
         norm_const, norm_error = integrate.quad(integrand_normalization, lower_bound, upper_bound)
