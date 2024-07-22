@@ -215,7 +215,7 @@ class InfoHDP:
         upper_bound = log_az + 3  # Equivalent to log(az*10)
 
         def integrand_normalization(log_x):
-            return np.exp(InfoHDP.logLa(np.exp(log_x)-log_az, nn, kz))
+            return np.exp(InfoHDP.logLa(np.exp(log_x), nn, kz)-log_az)
 
         def integrand_weighted_spost(log_x):
             x = np.exp(log_x)
