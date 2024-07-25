@@ -250,35 +250,37 @@ class InfoHDP:
         az = InfoHDP.asol(nn, kz) # checked
         
         log_az = np.log(az)
+        logLa_az = InfoHDP.logLa(az, nn, kz)
         #lower_bound = log_az - 3  # Equivalent to log(az/10)
         #upper_bound = log_az + 3  # Equivalent to log(az*10)
         lower_bound, upper_bound = InfoHDP.intEa(az, nn, kz)
 
         def integrand_normalization(log_x):
-            return np.exp(InfoHDP.logLa(np.exp(log_x), nn, kz)-log_az)
+            return np.exp(InfoHDP.logLa(np.exp(log_x), nn, kz)-logLa_az)
 
         def integrand_weighted_spost(log_x):
             x = np.exp(log_x)
-            return InfoHDP.Spost(x, nn, dkmz) * np.exp(InfoHDP.logLa(x, nn, kz)-log_az)
+            return InfoHDP.Spost(x, nn, dkmz) * np.exp(InfoHDP.logLa(x, nn, kz)-logLa_az)
 
         def integrand_weighted_spost2(log_x):
             x = np.exp(log_x)
-            return (InfoHDP.Spost(x, nn, dkmz)**2) * np.exp(InfoHDP.logLa(x, nn, kz)-log_az)
+            return (InfoHDP.Spost(x, nn, dkmz)**2) * np.exp(InfoHDP.logLa(x, nn, kz)-logLa_az)
 
         # Calculate normalization constant
-        norm_const, norm_error = integrate.quad(integrand_normalization, lower_bound, upper_bound)
+        norm_const, _ = integrate.quad(integrand_normalization, lower_bound, upper_bound)
 
         # Calculate weighted integral of Spost
-        weighted_integral, weighted_error = integrate.quad(integrand_weighted_spost, lower_bound, upper_bound)
+        weighted_integral, _ = integrate.quad(integrand_weighted_spost, lower_bound, upper_bound)
 
         # Calculate weighted integral of Spost
-        weighted_integral2, weighted_error2 = integrate.quad(integrand_weighted_spost2, lower_bound, upper_bound)
+        weighted_integral2, _ = integrate.quad(integrand_weighted_spost2, lower_bound, upper_bound)
 
         # Normalize the result
         sint = weighted_integral / norm_const
         sint2 = weighted_integral2 / norm_const
 
-        # Estimate error (this is an approximation and may need refinement)
+        # Estimate error 
+        # (this is an approximation: we are lacking the error that comes from the variance for fixed alpha, avergage over...)
         dsint = np.sqrt(sint2 - sint**2)
 
         return sint, dsint
