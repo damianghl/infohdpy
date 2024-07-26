@@ -50,7 +50,6 @@ class InfoHDP:
         alist = np.full(Ns, alpha / Ns)
         bes = stats.beta.rvs(beta, beta, size=Ns)
         pi = stats.dirichlet.rvs(alist, size=ndist)
-        pi = np.column_stack((pi, 1 - np.sum(pi, axis=1)))
         pij = np.array([np.concatenate([(pi[k, i] * bes[i], pi[k, i] * (1 - bes[i])) for i in range(Ns)]) for k in range(ndist)])
         return pij
 
@@ -413,7 +412,6 @@ class InfoHDP:
         
         bes = np.random.choice([psure, 0.5, 1 - psure], size=Ns, p=prdel)
         pi = np.random.dirichlet(alist, size=ndist)
-        pi = np.column_stack((pi, 1 - np.sum(pi, axis=1)))
         
         pij = np.zeros((ndist, 2 * Ns))
         for k in range(ndist):
@@ -650,9 +648,8 @@ class InfoHDP:
         pjdadoi = np.random.dirichlet(beta * qy, size=Ns)
         pjdadoi = np.column_stack((pjdadoi, 1 - np.sum(pjdadoi, axis=1)))
         pi = np.random.dirichlet(alist)
-        pi = np.append(pi, 1 - np.sum(pi))
-        pij = np.outer(pi, pjdadoi.T).T
-        return pi, pjdadoi, pij
+        pij_t = pjdadoi * pi[:, np.newaxis]
+        return pi, pjdadoi, pij_t
 
     @staticmethod
     def genSamplesPriorT(pi, pjdadoi, M, Ns=10000):

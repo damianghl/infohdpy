@@ -17,7 +17,6 @@ def gen_prior_pij(alpha: float, beta: float, ndist: int = 1, Ns: int = 10000) ->
     alist = np.full(Ns, alpha / Ns)
     bes = np.random.beta(beta, beta, size=Ns)
     pi = np.random.dirichlet(alist, size=ndist)
-    pi = np.column_stack((pi, 1 - np.sum(pi, axis=1)))
     pij = np.array([np.concatenate([(pi[k, i] * bes[i], pi[k, i] * (1 - bes[i])) for i in range(Ns)]) for k in range(ndist)])
     return pij
 
@@ -40,7 +39,6 @@ def gen_nasty_pij(alfa: float, psure: float, type: int = 1, ndist: int = 1, Ns: 
     
     bes = np.random.choice([psure, 0.5, 1 - psure], size=Ns, p=prdel)
     pi = np.random.dirichlet(alist, size=ndist)
-    pi = np.column_stack((pi, 1 - np.sum(pi, axis=1)))
     
     pij = np.array([np.concatenate([(pi[k, i] * bes[i], pi[k, i] * (1 - bes[i])) for i in range(Ns)]) for k in range(ndist)])
     return pij
@@ -80,8 +78,13 @@ def gen_prior_pij_t(alfa: float, beta: float, qy: List[float], Ns: int = 10000) 
         Tuple[np.ndarray, np.ndarray, np.ndarray]: Tuple containing pi, pj|i, and pij.
     """
     alist = np.full(Ns, alfa / Ns)
+    
+    # Generate the conditional distribution p(y_j|x_i)
     pjdadoi = np.random.dirichlet(beta * np.array(qy), size=Ns)
+    
+    # Generate the marginal distribution p(x_i)
     pi = np.random.dirichlet(alist)
-    pi = np.append(pi, 1 - np.sum(pi))
-    pij = np.outer(pi, pjdadoi.T).T
-    return pi, pjdadoi, pij
+    
+    # Compute the joint probability distribution p(x_i, y_j)
+    pij_t = pjdadoi * pi[:, np.newaxis]
+    return pi, pjdadoi, pij_t
