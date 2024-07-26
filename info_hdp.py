@@ -6,7 +6,15 @@ class InfoHDP:
     @staticmethod
     def strue(p):
         # Implementation of Strue
-        return -np.sum(np.where(p > 0, p * np.log(p), 0))
+
+        # Ensure p is a numpy array
+        p = np.asarray(p)
+        
+        # Compute the entropy safely
+        entropy = -np.sum(p * np.log(p, where=(p > 0), out=np.zeros_like(p)))
+        #return -np.sum(np.where(p > 0, p * np.log(p), 0))
+        
+        return entropy
 
     @staticmethod
     def sxtrue(p):
@@ -280,7 +288,7 @@ class InfoHDP:
         sint2 = weighted_integral2 / norm_const
 
         # Estimate error 
-        # (this is an approximation: we are lacking the error that comes from the variance for fixed alpha, avergage over...)
+        # We are missing the error that comes from the variance for fixed alpha, avergage over p(alpha|n)
         dsint = np.sqrt(sint2 - sint**2)
 
         return sint, dsint
