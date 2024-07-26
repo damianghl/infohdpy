@@ -2,7 +2,8 @@
 from .core import *
 
 # Import estimators
-from .estimators import naive, nsb, infohdp, binary_infohdp, multiclass_infohdp
+#from .estimators import naive, nsb, infohdp, binary_infohdp, multiclass_infohdp
+from .estimators import naive, nsb
 
 # Import generators
 from .generators import probability, sample
@@ -17,9 +18,9 @@ __version__ = "0.1.0"
 __all__ = [
     "naive",
     "nsb",
-    "infohdp",
-    "binary_infohdp",
-    "multiclass_infohdp",
+#    "infohdp",
+#    "binary_infohdp",
+#    "multiclass_infohdp",
     "probability",
     "sample",
 ]

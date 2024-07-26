@@ -1,8 +1,7 @@
-# infohdp/estimators/naive.py
-
 import numpy as np
 from typing import Union, List, Tuple
 from .base import BaseEstimator
+from ..utils import dkm2  # Import dkm2 from utils
 
 class NaiveEstimator(BaseEstimator):
     @staticmethod
@@ -30,8 +29,8 @@ class NaiveEstimator(BaseEstimator):
             float: Estimated entropy.
         """
         nn = len(samples)
-        dkm2 = self.dkm2(samples)
-        return self.snaive(nn, dkm2)
+        dkm2_result = dkm2(samples)
+        return self.snaive(nn, dkm2_result)
 
     def estimate_mutual_information(self, samples: Union[np.ndarray, List[Tuple[int, int]]]) -> float:
         """
@@ -51,9 +50,9 @@ class NaiveEstimator(BaseEstimator):
             samxz = np.abs(samples)
             samyz = np.sign(samples)
         
-        dkmz = self.dkm2(samples)
-        dkmzX = self.dkm2(samxz)
-        dkmzY = self.dkm2(samyz)
+        dkmz = dkm2(samples)
+        dkmzX = dkm2(samxz)
+        dkmzY = dkm2(samyz)
         
         return (self.snaive(nn, dkmzX) + 
                 self.snaive(nn, dkmzY) - 

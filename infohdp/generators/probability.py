@@ -42,11 +42,7 @@ def gen_nasty_pij(alfa: float, psure: float, type: int = 1, ndist: int = 1, Ns: 
     pi = np.random.dirichlet(alist, size=ndist)
     pi = np.column_stack((pi, 1 - np.sum(pi, axis=1)))
     
-    pij = np.zeros((ndist, 2 * Ns))
-    for k in range(ndist):
-        pij[k, ::2] = pi[k] * bes
-        pij[k, 1::2] = pi[k] * (1 - bes)
-    
+    pij = np.array([np.concatenate([(pi[k, i] * bes[i], pi[k, i] * (1 - bes[i])) for i in range(Ns)]) for k in range(ndist)])
     return pij
 
 def gen_nasty_pij2(psure: float, type: int = 2, ndist: int = 1, Ns: int = 10000) -> np.ndarray:
@@ -67,11 +63,7 @@ def gen_nasty_pij2(psure: float, type: int = 2, ndist: int = 1, Ns: int = 10000)
     bes = np.random.choice([psure, 0.5, 1 - psure], size=Ns, p=prdel)
     pi = np.full((ndist, Ns), 1 / Ns)
     
-    pij = np.zeros((ndist, 2 * Ns))
-    for k in range(ndist):
-        pij[k, ::2] = pi[k] * bes
-        pij[k, 1::2] = pi[k] * (1 - bes)
-    
+    pij = np.array([np.concatenate([(pi[k, i] * bes[i], pi[k, i] * (1 - bes[i])) for i in range(Ns)]) for k in range(ndist)])
     return pij
 
 def gen_prior_pij_t(alfa: float, beta: float, qy: List[float], Ns: int = 10000) -> Union[np.ndarray, np.ndarray, np.ndarray]:

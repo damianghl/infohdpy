@@ -45,5 +45,3 @@ def nxysam(sam: List[Tuple[int, int]], Ny: int) -> np.ndarray:
     tsamx = np.unique(samx)
     nxy = [[sum(1 for s in sam if s[0] == x and s[1] == y) for y in range(Ny)] for x in tsamx]
     return np.array(nxy)
-
-# Add any other utility functions that are used across your package

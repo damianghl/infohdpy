@@ -33,4 +33,10 @@ infohdp/
             test_probability.py
             test_sample.py
         test_utils.py
-Can you help me in this new structure to implement these functions: infohdp/__init__.py, infohdp/core.py, infohdp/utils.py?
+Can you help me in this new structure to implement these functions: infohdp/estimators/infohdp.py, infohdp/estimators/binary_infohdp.py, infohdp/estimators/multiclass_infohdp.py?
+
+InfoHDPEstimator: Implements my novel InfoHDP method
+BinaryInfoHDPEstimator: Specific to binary Y labels
+MulticlassInfoHDPEstimator: For multiple Y labels
+
+Attaching infohdp/__init__.py, infohdp/utils.py, infohdp/estimators/__init__.py and infohdp/estimators/base.py for context.
