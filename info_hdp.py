@@ -6,7 +6,15 @@ class InfoHDP:
     @staticmethod
     def strue(p):
         # Implementation of Strue
-        return -np.sum(np.where(p > 0, p * np.log(p), 0))
+
+        # Ensure p is a numpy array
+        p = np.asarray(p)
+        
+        # Compute the entropy safely
+        entropy = -np.sum(p * np.log(p, where=(p > 0), out=np.zeros_like(p)))
+        #return -np.sum(np.where(p > 0, p * np.log(p), 0))
+        
+        return entropy
 
     @staticmethod
     def sxtrue(p):
@@ -173,7 +181,7 @@ class InfoHDP:
         Returns:
             float: Posterior entropy.
         """
-        return (special.polygamma(0, nn + x + 1) - 
+        return (special.polygamma(0, nn + x + 1) - (x / (x + nn)) * special.polygamma(0, 1)-
                 (1 / (x + nn)) * sum(count * freq * special.polygamma(0, freq + 1) for freq, count in dkm))
 
     @classmethod
@@ -195,6 +203,45 @@ class InfoHDP:
         return smap
 
     @staticmethod
+    def D2expalogL(ex, n, k):
+        """
+        Calculates the second derivative of log-likelihood of alpha with respect to log(alpha).
+
+        This function is used to determine intervals for integration in the estimation process.
+
+        Args:
+            ex (float): Exponential of alpha value (exp(alpha)).
+            n (int): Total number of samples.
+            k (int): Number of unique samples.
+
+        Returns:
+            float: Second derivative of log-likelihood with respect to log(alpha).
+        """
+        return np.exp(ex) * (special.digamma(1 + np.exp(ex)) - special.digamma(np.exp(ex) + n) + 
+                            np.exp(ex) * (special.polygamma(1, 1 + np.exp(ex)) - special.polygamma(1, np.exp(ex) + n)))
+
+    @staticmethod
+    def intEa(xx, nz, kz, nsig=3):
+        """
+        Calculates the interval for integration in log(alpha).
+
+        This function determines the range over which to integrate when estimating alpha.
+
+        Args:
+            xx (float): Alpha value.
+            nz (int): Total number of samples.
+            kz (int): Number of unique samples.
+            nsig (float, optional): Number of standard deviations to use for the interval. Defaults to 3.
+
+        Returns:
+            Tuple[float, float]: Lower and upper bounds of the integration interval in log(alpha).
+        """
+        sigea = np.sqrt(-InfoHDP.D2expalogL(np.log(xx), nz, kz))
+        ead = np.log(xx) - nsig * sigea
+        eau = np.log(xx) + nsig * sigea
+        return ead, eau
+
+    @staticmethod
     def Sint(sam: np.ndarray) -> Tuple[float, float]:
         """
         Compute NSB entropy estimate with integration.
@@ -211,34 +258,37 @@ class InfoHDP:
         az = InfoHDP.asol(nn, kz) # checked
         
         log_az = np.log(az)
-        lower_bound = log_az - 3  # Equivalent to log(az/10)
-        upper_bound = log_az + 3  # Equivalent to log(az*10)
+        logLa_az = InfoHDP.logLa(az, nn, kz)
+        #lower_bound = log_az - 3  # Equivalent to log(az/10)
+        #upper_bound = log_az + 3  # Equivalent to log(az*10)
+        lower_bound, upper_bound = InfoHDP.intEa(az, nn, kz)
 
         def integrand_normalization(log_x):
-            return np.exp(InfoHDP.logLa(np.exp(log_x), nn, kz)-log_az)
+            return np.exp(InfoHDP.logLa(np.exp(log_x), nn, kz)-logLa_az)
 
         def integrand_weighted_spost(log_x):
             x = np.exp(log_x)
-            return InfoHDP.Spost(x, nn, dkmz) * np.exp(InfoHDP.logLa(x, nn, kz)-log_az)
+            return InfoHDP.Spost(x, nn, dkmz) * np.exp(InfoHDP.logLa(x, nn, kz)-logLa_az)
 
         def integrand_weighted_spost2(log_x):
             x = np.exp(log_x)
-            return (InfoHDP.Spost(x, nn, dkmz)**2) * np.exp(InfoHDP.logLa(x, nn, kz)-log_az)
+            return (InfoHDP.Spost(x, nn, dkmz)**2) * np.exp(InfoHDP.logLa(x, nn, kz)-logLa_az)
 
         # Calculate normalization constant
-        norm_const, norm_error = integrate.quad(integrand_normalization, lower_bound, upper_bound)
+        norm_const, _ = integrate.quad(integrand_normalization, lower_bound, upper_bound)
 
         # Calculate weighted integral of Spost
-        weighted_integral, weighted_error = integrate.quad(integrand_weighted_spost, lower_bound, upper_bound)
+        weighted_integral, _ = integrate.quad(integrand_weighted_spost, lower_bound, upper_bound)
 
         # Calculate weighted integral of Spost
-        weighted_integral2, weighted_error2 = integrate.quad(integrand_weighted_spost2, lower_bound, upper_bound)
+        weighted_integral2, _ = integrate.quad(integrand_weighted_spost2, lower_bound, upper_bound)
 
         # Normalize the result
         sint = weighted_integral / norm_const
         sint2 = weighted_integral2 / norm_const
 
-        # Estimate error (this is an approximation and may need refinement)
+        # Estimate error 
+        # We are missing the error that comes from the variance for fixed alpha, avergage over p(alpha|n)
         dsint = np.sqrt(sint2 - sint**2)
 
         return sint, dsint
@@ -401,46 +451,7 @@ class InfoHDP:
             pij[k, 1::2] = pi[k] * (1 - bes)
         
         return pij
-    
-    @staticmethod
-    def D2expalogL(ex, n, k):
-        """
-        Calculates the second derivative of log-likelihood of alpha with respect to log(alpha).
-
-        This function is used to determine intervals for integration in the estimation process.
-
-        Args:
-            ex (float): Exponential of alpha value (exp(alpha)).
-            n (int): Total number of samples.
-            k (int): Number of unique samples.
-
-        Returns:
-            float: Second derivative of log-likelihood with respect to log(alpha).
-        """
-        return np.exp(ex) * (special.digamma(1 + np.exp(ex)) - special.digamma(np.exp(ex) + n) + 
-                            np.exp(ex) * (special.polygamma(1, 1 + np.exp(ex)) - special.polygamma(1, np.exp(ex) + n)))
-
-    @staticmethod
-    def intEa(xx, nz, kz, nsig=3):
-        """
-        Calculates the interval for integration in log(alpha).
-
-        This function determines the range over which to integrate when estimating alpha.
-
-        Args:
-            xx (float): Alpha value.
-            nz (int): Total number of samples.
-            kz (int): Number of unique samples.
-            nsig (float, optional): Number of standard deviations to use for the interval. Defaults to 3.
-
-        Returns:
-            Tuple[float, float]: Lower and upper bounds of the integration interval in log(alpha).
-        """
-        sigea = np.sqrt(-InfoHDP.D2expalogL(np.log(xx), nz, kz))
-        ead = np.log(xx) - nsig * sigea
-        eau = np.log(xx) + nsig * sigea
-        return ead, eau
-    
+        
     @classmethod
     def InsbCon(cls, sam):
         """
