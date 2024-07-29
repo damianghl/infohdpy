@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from typing import Union, List, Tuple
 
-class BaseEstimator(ABC):
+class BaseEntropyEstimator(ABC):
     @abstractmethod
     def estimate_entropy(self, samples: Union[np.ndarray, List[Tuple[int, int]]]) -> Union[float, Tuple[float, float]]:
         """
@@ -16,6 +16,7 @@ class BaseEstimator(ABC):
         """
         pass
 
+class BaseMutualInformationEstimator(ABC):
     @abstractmethod
     def estimate_mutual_information(self, samples: Union[np.ndarray, List[Tuple[int, int]]]) -> Union[float, Tuple[float, float]]:
         """
@@ -28,4 +29,6 @@ class BaseEstimator(ABC):
             Union[float, Tuple[float, float]]: Estimated mutual information, or a tuple containing the estimated mutual information and the error.
         """
         pass
-    
+
+class BaseEstimator(BaseEntropyEstimator, BaseMutualInformationEstimator):
+    pass

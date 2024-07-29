@@ -758,7 +758,9 @@ class InfoHDP:
             float: Estimated mutual information.
         """
         nn = len(sam)
-        ny = max(s[1] for s in sam) + 1 # TODO: check this +1 for ny
+        distinct_second_elements = {s[1] for s in sam}
+        # Calculate the number of distinct elements
+        ny = len(distinct_second_elements)
         nxy = cls.nxysam(sam, ny)
         
         if ML == 1:

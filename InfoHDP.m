@@ -141,8 +141,8 @@ Sint[sam_]:=Block[{sint=0.,s2int=0.,dsint=0.,
 	listEa=Range[ead,eau,(eau-ead)/(npoints-1.)];
 	listLogL=(logLa[Exp[#],nn,kz]-logLaz)& /@ listEa;
 	listLogL=listLogL//Exp//Normalize[#,Total]&;
-	sint=(Spost[Exp[#],nn,dkmz]& /@ listEa).listLogL;
-	s2int=((Spost[Exp[#],nn,dkmz]& /@ listEa)^2).listLogL;
+	sint=(Spost[Exp[#],nn,dkmz]& /@ listEa) . listLogL;
+	s2int=((Spost[Exp[#],nn,dkmz]& /@ listEa)^2) . listLogL;
 	dsint=Sqrt[s2int-sint^2];(*variance only coming from uncertainty in alfa*)
 	{sint,dsint}];
 Insb[sam_]:=Block[{insb=0.,i2nsb=0.,dinsb=0.,sx,sy,sxy,
@@ -216,8 +216,8 @@ IhdpIntb[sam_,onlyb_:0,noprior_:0.]:=Block[{ihdp=0., bz=0.,az=0., nn=Length@sam,
 	listLogL=(logLb[Exp[#],kx,n10,noprior]-logLbz)& /@ listEb;
 	listLogL=listLogL//Exp//Normalize[#,Total]&;
 	
-	sint=(SYconX[(*0.*)az,Exp[#],nn,n10]& /@ listEb).listLogL;
-	s2int=(SYconX2[Exp[#],nn,n10]& /@ listEb).listLogL;
+	sint=(SYconX[(*0.*)az,Exp[#],nn,n10]& /@ listEb) . listLogL;
+	s2int=(SYconX2[Exp[#],nn,n10]& /@ listEb) . listLogL;
 	(*varsint=(varSYconX[Exp[#],nn,n10]& /@ listEb).listLogL;*)(*this is average variance with fixed beta ~20% of total*)
 	dsint=Sqrt[s2int-sint^2];
 	(*dsint=Sqrt[varsint];*)

@@ -24,8 +24,16 @@ def sxtrue(p: np.ndarray) -> float:
     Returns:
         float: Entropy of X.
     """
-    p_reshaped = p.reshape(-1, 2)
-    return strue(np.sum(p_reshaped, axis=1))
+    if p.ndim == 1:
+        # p is a vector
+        p_reshaped = p.reshape(-1, 2)
+        return strue(np.sum(p_reshaped, axis=1))
+    elif p.ndim == 2:
+        # p is a matrix
+        return strue(np.sum(p, axis=1))
+    else:
+        raise ValueError("Input array must be 1D or 2D.")
+
 
 def sytrue(p: np.ndarray) -> float:
     """
@@ -37,8 +45,15 @@ def sytrue(p: np.ndarray) -> float:
     Returns:
         float: Entropy of Y.
     """
-    p_reshaped = p.reshape(-1, 2)
-    return strue(np.sum(p_reshaped, axis=0))
+    if p.ndim == 1:
+        # p is a vector
+        p_reshaped = p.reshape(-1, 2)
+        return strue(np.sum(p_reshaped, axis=0))
+    elif p.ndim == 2:
+        # p is a matrix
+        return strue(np.sum(p, axis=0))
+    else:
+        raise ValueError("Input array must be 1D or 2D.")
 
 def itrue(p: np.ndarray) -> float:
     """
