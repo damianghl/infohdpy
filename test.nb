@@ -3,10 +3,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[         0,          0]
-NotebookDataLength[     55071,       1479]
-NotebookOptionsPosition[     48415,       1372]
-NotebookOutlinePosition[     48809,       1388]
-CellTagsIndexPosition[     48766,       1385]
+NotebookDataLength[     53057,       1397]
+NotebookOptionsPosition[     46628,       1294]
+NotebookOutlinePosition[     47022,       1310]
+CellTagsIndexPosition[     46979,       1307]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -1290,84 +1290,6 @@ Cell[BoxData[
    3.931261864282542*^9},
  CellLabel->
   "Out[176]=",ExpressionUUID->"582718c9-116d-435d-b83b-fa0c18d9a972"]
-}, Open  ]],
-
-Cell[CellGroupData[{
-
-Cell[BoxData[
- RowBox[{"samplest", "//", "MatrixForm"}]], "Input",
- CellChangeTimes->{{3.93126454369582*^9, 3.931264551007551*^9}},
- CellLabel->
-  "In[243]:=",ExpressionUUID->"de438c81-2b9e-4039-970d-1f128b335d3b"],
-
-Cell[BoxData[
- TagBox[
-  RowBox[{"(", "\[NoBreak]", GridBox[{
-     {"384", "0"},
-     {"832", "1"},
-     {"12", "0"},
-     {"273", "0"},
-     {"231", "1"},
-     {"231", "0"},
-     {"239", "0"},
-     {"341", "0"},
-     {"384", "2"},
-     {"472", "0"},
-     {"384", "0"},
-     {"824", "0"},
-     {"239", "0"},
-     {"834", "1"},
-     {"13", "0"},
-     {"824", "0"},
-     {"384", "2"},
-     {"472", "0"},
-     {"231", "1"},
-     {"239", "0"},
-     {"832", "1"},
-     {"931", "1"},
-     {"273", "0"},
-     {"832", "1"},
-     {"834", "1"},
-     {"881", "0"},
-     {"231", "1"},
-     {"60", "0"},
-     {"239", "0"},
-     {"834", "1"},
-     {"231", "1"},
-     {"384", "2"},
-     {"931", "1"},
-     {"472", "0"},
-     {"832", "1"},
-     {"273", "0"},
-     {"832", "1"},
-     {"834", "1"},
-     {"12", "0"},
-     {"832", "1"},
-     {"931", "1"},
-     {"832", "1"},
-     {"273", "0"},
-     {"832", "1"},
-     {"231", "1"},
-     {"384", "0"},
-     {"881", "0"},
-     {"273", "0"},
-     {"273", "0"},
-     {"231", "1"}
-    },
-    GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
-    GridBoxSpacings->{"Columns" -> {
-        Offset[0.27999999999999997`], {
-         Offset[0.7]}, 
-        Offset[0.27999999999999997`]}, "Rows" -> {
-        Offset[0.2], {
-         Offset[0.4]}, 
-        Offset[0.2]}}], "\[NoBreak]", ")"}],
-  Function[BoxForm`e$, 
-   MatrixForm[BoxForm`e$]]]], "Output",
- CellChangeTimes->{3.931264551458637*^9},
- CellLabel->
-  "Out[243]//MatrixForm=",ExpressionUUID->"0e56e166-6ed7-454f-812e-\
-87c33b546a63"]
 }, Open  ]]
 },
 WindowSize->{1387.5, 747.75},
@@ -1469,10 +1391,6 @@ Cell[44294, 1236, 438, 7, 33, "Output",ExpressionUUID->"265117b2-cd6b-46cd-8551-
 Cell[44735, 1245, 800, 21, 33, "Output",ExpressionUUID->"f2de330c-5b23-4f2b-97bd-bbbebff11f26"],
 Cell[45538, 1268, 565, 11, 33, "Output",ExpressionUUID->"766790ab-22cc-4de9-bf6f-99c4e2b11212"],
 Cell[46106, 1281, 506, 10, 33, "Output",ExpressionUUID->"582718c9-116d-435d-b83b-fa0c18d9a972"]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[46649, 1296, 214, 4, 29, "Input",ExpressionUUID->"de438c81-2b9e-4039-970d-1f128b335d3b"],
-Cell[46866, 1302, 1533, 67, 875, "Output",ExpressionUUID->"0e56e166-6ed7-454f-812e-87c33b546a63"]
 }, Open  ]]
 }
 ]
