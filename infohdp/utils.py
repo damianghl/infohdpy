@@ -11,7 +11,8 @@ def dkm2(sam: np.ndarray) -> List[Tuple[int, int]]:
     Returns:
         List[Tuple[int, int]]: Frequency of frequencies.
     """
-    unique, counts = np.unique(sam, return_counts=True)
+    
+    unique, counts = np.unique(sam, return_counts=True, axis=0)
     unique_counts, count_counts = np.unique(counts, return_counts=True)
     return sorted(zip(unique_counts, count_counts))
 

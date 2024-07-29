@@ -16,7 +16,7 @@ class NSBEstimator(BaseEstimator):
         Returns:
             Tuple[float, float]: Estimated entropy and its standard deviation.
         """
-        unique, counts = np.unique(samples, return_counts=True)
+        unique, counts = np.unique(samples, return_counts=True, axis=0)
         H, std_H = ndd.entropy(counts, return_std=True)
         #H, std_H = ndd.entropy(counts, k=Ns, return_std=True) #given k: number of states
         return H, std_H
