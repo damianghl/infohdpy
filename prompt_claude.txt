@@ -9,7 +9,6 @@ infohdp/
         base.py
         naive.py
         nsb.py
-        infohdp.py
         binary_infohdp.py
         multiclass_infohdp.py
     generators/
@@ -25,7 +24,6 @@ infohdp/
             __init__.py
             test_naive.py
             test_nsb.py
-            test_infohdp.py
             test_binary_infohdp.py
             test_multiclass_infohdp.py
         test_generators/
@@ -33,10 +31,13 @@ infohdp/
             test_probability.py
             test_sample.py
         test_utils.py
-Can you help me in this new structure to implement these functions: infohdp/estimators/infohdp.py, infohdp/estimators/binary_infohdp.py, infohdp/estimators/multiclass_infohdp.py?
 
-InfoHDPEstimator: Implements my novel InfoHDP method
-BinaryInfoHDPEstimator: Specific to binary Y labels
-MulticlassInfoHDPEstimator: For multiple Y labels
+Can you help me in this new structure to implement these two files?: 
+1) infohdp/estimators/binary_infohdp.py: This should include the functions bsol, loglb, syconx, and ihdpmap.
+2) infohdp/estimators/multiclass_infohdp.py: This should include the functions bsolt, loglbt, syconxt, and ihdpmapt.
+
+BinaryInfoHDPEstimator: Implements my novel InfoHDP method, specifically to binary Y labels
+MulticlassInfoHDPEstimator: Implements my novel InfoHDP method, specifically for multiple Y labels
+These estimators should not and can not provide an estimate_entropy method. So maybe we need to modify the file estimators/base.py to make the inclussion of such method optional.
 
 Attaching infohdp/__init__.py, infohdp/utils.py, infohdp/estimators/__init__.py and infohdp/estimators/base.py for context.

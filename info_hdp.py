@@ -758,7 +758,7 @@ class InfoHDP:
             float: Estimated mutual information.
         """
         nn = len(sam)
-        ny = max(s[1] for s in sam) + 1
+        ny = max(s[1] for s in sam) + 1 # TODO: check this +1 for ny
         nxy = cls.nxysam(sam, ny)
         
         if ML == 1:
