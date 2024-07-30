@@ -702,7 +702,7 @@ class InfoHDP:
         """
         kx, Ny = nxy.shape
         ll = kx * (special.gammaln(b) - np.sum(special.gammaln(b * qy)))
-        ll += np.sum(np.sum(special.gammaln(1 + b * qy + nxy), axis=1) - special.gammaln(b + np.sum(nxy, axis=1)))
+        ll += np.sum(np.sum(special.gammaln(b * qy + nxy), axis=1) - special.gammaln(b + np.sum(nxy, axis=1)))
         return ll
     
     @classmethod
