@@ -2,11 +2,11 @@ import numpy as np
 from scipy import stats, special, optimize
 from typing import List, Tuple, Union
 from .base import BaseMutualInformationEstimator
-from ..utils import n10sam, dkm2
+from ..utils import freq_of_frequencies, count_nxy_binary
 
 class BinaryInfoHDPEstimator(BaseMutualInformationEstimator):
     @staticmethod
-    def bsol(kx: int, n10: List[List[int]], noprior: float = 0.) -> float:
+    def beta_solve(kx: int, n10: List[List[int]], noprior: float = 0.) -> float:
         """
         Solve for beta.
         
@@ -19,13 +19,13 @@ class BinaryInfoHDPEstimator(BaseMutualInformationEstimator):
             float: Solved beta value.
         """
         def objective(log_b):
-            return -BinaryInfoHDPEstimator.logLb(np.exp(log_b), kx, n10, noprior)
+            return -BinaryInfoHDPEstimator.logprob_beta(np.exp(log_b), kx, n10, noprior)
         
         result = optimize.minimize_scalar(objective, bounds=(-10, 10), method='bounded')
         return np.exp(result.x)
 
     @staticmethod
-    def logLb(b: float, kx: int, n10: List[List[int]], noprior: float = 0.) -> float:
+    def logprob_beta(b: float, kx: int, n10: List[List[int]], noprior: float = 0.) -> float:
         """
         Compute log-likelihood for beta.
         
@@ -46,7 +46,7 @@ class BinaryInfoHDPEstimator(BaseMutualInformationEstimator):
         return ll
 
     @staticmethod
-    def SYconX(x: float, bb: float, nn: int, n10: List[List[int]]) -> float:
+    def conditional_entropy_hyx(x: float, bb: float, nn: int, n10: List[List[int]]) -> float:
         """
         Compute conditional entropy S(Y|X).
         
@@ -84,15 +84,15 @@ class BinaryInfoHDPEstimator(BaseMutualInformationEstimator):
         
         if onlyb != 1:
             kk = len(np.unique(sam))
-            a1 = self.asol(nn, kk)  # Note: You need to implement asol method or import it
+            a1 = self.alpha_solve(nn, kk)  # Note: You need to implement asol method or import it
         
         samx = np.abs(sam)
         kx = len(np.unique(samx))
-        n10 = n10sam(sam)
-        b1 = self.bsol(kx, n10, noprior)
+        n10 = count_nxy_binary(sam)
+        b1 = self.beta_solve(kx, n10, noprior)
         
-        sy = self.smaxlik(np.sign(sam))  # Note: You need to implement smaxlik method or import it
-        sycx = self.SYconX(a1, b1, nn, n10)
+        sy = self.smaxlik(np.sign(sam))  # FIXME: implement this better, please
+        sycx = self.conditional_entropy_hyx(a1, b1, nn, n10)
         
         ihdp = sy - sycx
         return ihdp
@@ -108,10 +108,10 @@ class BinaryInfoHDPEstimator(BaseMutualInformationEstimator):
         Returns:
             float: Maximum likelihood entropy estimate.
         """
-        return BinaryInfoHDPEstimator.snaive(len(sam), dkm2(sam))
+        return BinaryInfoHDPEstimator.compute_naive_entropy(len(sam), freq_of_frequencies(sam))
 
     @staticmethod # TODO: call instead from estimators/naive
-    def snaive(nn: int, dkm2: List[Tuple[int, int]]) -> float:
+    def compute_naive_entropy(nn: int, dkm2: List[Tuple[int, int]]) -> float:
         """
         Compute naive entropy estimate.
         
@@ -125,7 +125,7 @@ class BinaryInfoHDPEstimator(BaseMutualInformationEstimator):
         return -sum(count * (freq / nn) * np.log(freq / nn) for freq, count in dkm2)
 
     @staticmethod
-    def asol(nn: int, k: int) -> float:
+    def alpha_solve(nn: int, k: int) -> float:
         """
         Solve for alpha (NSB).
         

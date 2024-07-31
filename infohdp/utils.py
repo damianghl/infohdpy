@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List, Tuple
 
-def dkm2(sam: np.ndarray) -> List[Tuple[int, int]]:
+def freq_of_frequencies(sam: np.ndarray) -> List[Tuple[int, int]]:
     """
     Compute frequency of frequencies.
 
@@ -16,22 +16,22 @@ def dkm2(sam: np.ndarray) -> List[Tuple[int, int]]:
     unique_counts, count_counts = np.unique(counts, return_counts=True)
     return sorted(zip(unique_counts, count_counts))
 
-def n10sam(sam: np.ndarray) -> List[List[int]]:
+def count_nxy_binary(sam: np.ndarray) -> List[List[int]]:
     """
-    Compute n10 statistics from samples.
+    Counts for each x that occurs, the number of y=+-1 samples.
 
     Args:
         sam (np.ndarray): Sample data.
 
     Returns:
-        List[List[int]]: n10 statistics.
+        List[List[int]]: Counts of y=+-1.
     """
     samx = np.abs(sam)
     unique, counts = np.unique(samx, return_counts=True)
     n10 = [[np.sum(sam == x), np.sum(sam == -x)] for x in unique]
     return n10
 
-def nxysam(sam: List[Tuple[int, int]], Ny: int) -> np.ndarray:
+def count_nxy_multiclass(sam: List[Tuple[int, int]], Ny: int) -> np.ndarray:
     """
     Counts for each x that occurs, the number of y samples (result in matrix Kx x Ny).
 

@@ -1,11 +1,11 @@
 import numpy as np
 from typing import Union, List, Tuple
 from .base import BaseEstimator
-from ..utils import dkm2  # Import dkm2 from utils
+from ..utils import freq_of_frequencies  # Import dkm2 from utils
 
 class NaiveEstimator(BaseEstimator):
     @staticmethod
-    def snaive(nn: int, dkm2: List[Tuple[int, int]]) -> float:
+    def compute_naive_entropy(nn: int, dkm2: List[Tuple[int, int]]) -> float:
         """
         Compute naive entropy estimate.
         
@@ -29,8 +29,8 @@ class NaiveEstimator(BaseEstimator):
             float: Estimated entropy.
         """
         nn = len(samples)
-        dkm2_result = dkm2(samples)
-        return self.snaive(nn, dkm2_result)
+        dkm2_result = freq_of_frequencies(samples)
+        return self.compute_naive_entropy(nn, dkm2_result)
 
     def estimate_mutual_information(self, samples: Union[np.ndarray, List[Tuple[int, int]]]) -> float:
         """
@@ -50,10 +50,10 @@ class NaiveEstimator(BaseEstimator):
             samxz = np.abs(samples)
             samyz = np.sign(samples)
         
-        dkmz = dkm2(samples)
-        dkmzX = dkm2(samxz)
-        dkmzY = dkm2(samyz)
+        dkmz = freq_of_frequencies(samples)
+        dkmzX = freq_of_frequencies(samxz)
+        dkmzY = freq_of_frequencies(samyz)
         
-        return (self.snaive(nn, dkmzX) + 
-                self.snaive(nn, dkmzY) - 
-                self.snaive(nn, dkmz))
+        return (self.compute_naive_entropy(nn, dkmzX) + 
+                self.compute_naive_entropy(nn, dkmzY) - 
+                self.compute_naive_entropy(nn, dkmz))

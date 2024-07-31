@@ -18,7 +18,7 @@ class NSBEstimator(BaseEstimator):
         """
         unique, counts = np.unique(samples, return_counts=True, axis=0)
         H, std_H = ndd.entropy(counts, return_std=True)
-        #H, std_H = ndd.entropy(counts, k=Ns, return_std=True) #given k: number of states
+        #H, std_H = ndd.entropy(counts, k=Ns, return_std=True) #given k: number of states # TODO: maybe include option to provide K
         return H, std_H
 
     def estimate_mutual_information(self, samples: Union[np.ndarray, List[Tuple[int, int]]]) -> Tuple[float, float]:
