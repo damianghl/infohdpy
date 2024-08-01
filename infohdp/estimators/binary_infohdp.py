@@ -3,6 +3,7 @@ from scipy import stats, special, optimize
 from typing import List, Tuple, Union
 from .base import BaseMutualInformationEstimator
 from ..utils import freq_of_frequencies, count_nxy_binary
+from ..core import entropy_true
 
 class BinaryInfoHDPEstimator(BaseMutualInformationEstimator):
     @staticmethod
@@ -65,7 +66,7 @@ class BinaryInfoHDPEstimator(BaseMutualInformationEstimator):
                                                   (n0 + bb) / (n1 + n0 + 2*bb) * special.polygamma(0, n0 + bb + 1))
                                      for n1, n0 in n10))
 
-    def estimate_mutual_information(self, sam: Union[np.ndarray, List[Tuple[int, int]]], onlyb: int = 0, noprior: int = 0) -> float:
+    def estimate_mutual_information(self, sam: Union[np.ndarray, List[Tuple[int, int]]], onlyb: int = 0, noprior: int = 0, ML: int = 1) -> float:
         """
         Calculates the MAP (Maximum A Posteriori) estimate of mutual information using InfoHDP.
 
@@ -89,40 +90,18 @@ class BinaryInfoHDPEstimator(BaseMutualInformationEstimator):
         samx = np.abs(sam)
         kx = len(np.unique(samx))
         n10 = count_nxy_binary(sam)
-        b1 = self.beta_solve(kx, n10, noprior)
         
-        sy = self.smaxlik(np.sign(sam))  # FIXME: implement this better, please
+        if ML == 1:
+            qye = np.sum(n10, axis=0) / np.sum(n10)
+        else:
+            qye = (np.sum(n10, axis=0) + 1/2) / (np.sum(n10) + 1)
+        
+        b1 = self.beta_solve(kx, n10, noprior) 
+        sy = entropy_true(qye)
         sycx = self.conditional_entropy_hyx(a1, b1, nn, n10)
         
         ihdp = sy - sycx
         return ihdp
-
-    @staticmethod # FIXME: maybe unnecessary?
-    def smaxlik(sam: np.ndarray) -> float:
-        """
-        Compute maximum likelihood entropy estimate.
-        
-        Args:
-            sam (np.ndarray): Sample data.
-        
-        Returns:
-            float: Maximum likelihood entropy estimate.
-        """
-        return BinaryInfoHDPEstimator.compute_naive_entropy(len(sam), freq_of_frequencies(sam))
-
-    @staticmethod # TODO: call instead from estimators/naive
-    def compute_naive_entropy(nn: int, dkm2: List[Tuple[int, int]]) -> float:
-        """
-        Compute naive entropy estimate.
-        
-        Args:
-            nn (int): Total number of samples.
-            dkm2 (List[Tuple[int, int]]): Frequency of frequencies.
-        
-        Returns:
-            float: Naive entropy estimate.
-        """
-        return -sum(count * (freq / nn) * np.log(freq / nn) for freq, count in dkm2)
 
     @staticmethod
     def alpha_solve(nn: int, k: int) -> float:
