@@ -3,6 +3,7 @@ from scipy import stats, special, optimize
 from typing import List, Tuple, Union
 from .base import BaseMutualInformationEstimator
 from ..utils import count_nxy_multiclass
+from ..core import entropy_true
 
 class MulticlassInfoHDPEstimator(BaseMutualInformationEstimator):
     @staticmethod
@@ -86,25 +87,7 @@ class MulticlassInfoHDPEstimator(BaseMutualInformationEstimator):
             qye = (np.sum(nxy, axis=0) + 1/ny) / (np.sum(nxy) + 1)
         
         b1 = self.beta_solve_multiclass(qye, nxy)
-        sy = self.entropy_true(qye)
+        sy = entropy_true(qye)
         sycx = self.conditional_entropy_hyx_multiclass(b1, nn, qye, nxy)
         ihdp = sy - sycx
         return ihdp
-
-    @staticmethod # TODO: call instead from core
-    def entropy_true(p: np.ndarray) -> float:
-        """
-        Implementation of Strue (true entropy)
-
-        Args:
-            p (np.ndarray): Probability distribution.
-
-        Returns:
-            float: True entropy.
-        """
-        # Ensure p is a numpy array
-        p = np.asarray(p)
-        
-        # Compute the entropy safely
-        entropy = -np.sum(p * np.log(p, where=(p > 0), out=np.zeros_like(p)))
-        return entropy
