@@ -1,0 +1,43 @@
+So I am writing a python package to estimate mutual information with a novel method which I call infoHDP. 
+I have put everything within a single file info_hdp.py (attached): how to calculate entropy and mutual information given the probabilities, some functions to generate different probabilities distributions and generate samples from them, naive methods to calculate entropy and info based on frequency estimation of probabilities, a specific method to calculate entropy called NSB (previously developed) and some auxiliary functions to use this method to estimate mutual information indirectly through entropies, and our specific functions to estimate mutual information based on beta priors for the conditional distribution (which are divided in two sets of functions, one for binary labels for variable y, and a more general case for multiple labels for y). 
+I am reorganizing the package so that it can be more modular and it is easy to expand/modify in the future. My new strucutre looks like this:
+infohdp/
+    __init__.py
+    core.py
+    estimators/
+        __init__.py
+        base.py
+        naive.py
+        nsb.py
+        binary_infohdp.py
+        multiclass_infohdp.py
+    generators/
+        __init__.py
+        probability.py
+        sample.py
+    utils.py
+    constants.py
+    tests/
+        __init__.py
+        test_core.py
+        test_estimators/
+            __init__.py
+            test_naive.py
+            test_nsb.py
+            test_binary_infohdp.py
+            test_multiclass_infohdp.py
+        test_generators/
+            __init__.py
+            test_probability.py
+            test_sample.py
+        test_utils.py
+
+Can you help me in this new structure to implement these two files?: 
+1) infohdp/estimators/binary_infohdp.py: This should include the functions bsol, loglb, syconx, and ihdpmap.
+2) infohdp/estimators/multiclass_infohdp.py: This should include the functions bsolt, loglbt, syconxt, and ihdpmapt.
+
+BinaryInfoHDPEstimator: Implements my novel InfoHDP method, specifically to binary Y labels
+MulticlassInfoHDPEstimator: Implements my novel InfoHDP method, specifically for multiple Y labels
+These estimators should not and can not provide an estimate_entropy method. So maybe we need to modify the file estimators/base.py to make the inclussion of such method optional.
+
+Attaching infohdp/__init__.py, infohdp/utils.py, infohdp/estimators/__init__.py and infohdp/estimators/base.py for context.
