@@ -73,7 +73,7 @@ class BinaryFullInfoHDPEstimator(BaseMutualInformationEstimator):
         dsint = np.sqrt(s2int - sint**2)
         
         ihdp = sy - sint
-        return ihdp, dsint, sint
+        return ihdp, dsint
     
 
     @staticmethod

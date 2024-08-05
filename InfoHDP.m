@@ -253,7 +253,7 @@ bsolT[qy_,nxy_]:=NArgMax[logLbT[Exp[ebb],qy,nxy],ebb,MaxIterations->1000]//Exp;
 SYconXT[bb_,nn_,qy_,nxy_]:=Block[{kx=Length@nxy,Ny=Length@qy,ss=0.},
 	ss=(1./nn)Sum[(nxy[[i]]//Total)(PolyGamma[(nxy[[i]]//Total)+bb+1.]-Sum[(bb qy[[j]]+nxy[[i,j]])PolyGamma[1.bb qy[[j]]+nxy[[i,j]]+1],{j,Ny}]/((nxy[[i]]//Total)+bb)),{i,Length@nxy}];
 	ss];
-IhdpMAPT[sam_,ML_:0]:= Block[{ihdp=0., b1=0., nn=Length@sam, ny=sam[[All,2]]//Max, nxy, qye, kx, n10, samx,
+IhdpMAPT[sam_,ML_:0]:= Block[{ihdp=0., b1=0., nn=Length@sam, ny=sam[[All,2]]//DeleteDuplicates//Length, nxy, qye, kx, n10, samx,
 	sycx=0., sy=0.},
 	nxy=nxysam[sam,ny];
 	qye=1.((nxy//Total)+1./ny)/((nxy//Flatten//Total)+1.);(*we have add SG correction to prob*)
