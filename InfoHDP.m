@@ -242,9 +242,10 @@ genSamplesPriorT[pi_,pjdadoi_,M_,Ns_:10^4]:=Block[{sam,samx,nameXStates=Range[Ns
 	samx=RandomChoice[(pi//Abs)->nameXStates,M];
 	sam=Table[{samx[[m]],RandomChoice[(pjdadoi[[samx[[m]] ]]//Abs)-> Range[Ny]]},{m,M}];(*numerical fluctuactions may make some<0*)sam];
 
-nxysam[sam_,Ny_]:=Block[{nxy,samx,tsamx},samx=sam[[All,1]];
+nxysam[sam_,Ny_]:=Block[{nxy,samx,tsamx,yys},samx=sam[[All,1]];
 	tsamx=samx//Tally;
-	nxy=Table[Count[sam,{tsamx[[tt,1]],yy}],{yy,Ny},{tt,Length@tsamx}];
+	yys=(sam[[All,2]]//Tally)[[All,1]];
+	nxy=Table[Count[sam,{tsamx[[tt,1]],yy}],{yy,yys(*Ny*)},{tt,Length@tsamx}];
 	nxy//Transpose];
 logLbT[b_,qy_,nxy_]:=Block[{kx=Length@nxy,Ny=Length@qy,ll=0.},
 	ll=kx(LogGamma[b]-Sum[LogGamma[b qy[[j]]],{j,Ny}])+Sum[1.Sum[LogGamma[1.b qy[[j]]+nxy[[i,j]]],{j,Ny}]-LogGamma[b+(nxy[[i]]//Total) ],{i,kx}];
