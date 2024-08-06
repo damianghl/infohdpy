@@ -79,7 +79,7 @@ class MulticlassInfoHDPEstimator(BaseMutualInformationEstimator):
         distinct_second_elements = {s[1] for s in sam}
         # Calculate the number of distinct elements
         ny = len(distinct_second_elements)
-        nxy = count_nxy_multiclass(sam, ny)
+        nxy = count_nxy_multiclass(sam)
         
         if ML == 1:
             qye = np.sum(nxy, axis=0) / np.sum(nxy)

@@ -31,7 +31,7 @@ def count_nxy_binary(sam: np.ndarray) -> List[List[int]]:
     n10 = [[np.sum(sam == x), np.sum(sam == -x)] for x in unique]
     return n10
 
-def count_nxy_multiclass(sam: List[Tuple[int, int]], Ny: int) -> np.ndarray:
+def count_nxy_multiclass(sam: List[Tuple[int, int]]) -> np.ndarray:
     """
     Counts for each x that occurs, the number of y samples (result in matrix Kx x Ny).
 
@@ -43,6 +43,8 @@ def count_nxy_multiclass(sam: List[Tuple[int, int]], Ny: int) -> np.ndarray:
         np.ndarray: 2D numpy array of counts.
     """
     samx = [s[0] for s in sam]
-    tsamx = np.unique(samx)
-    nxy = [[sum(1 for s in sam if s[0] == x and s[1] == y) for y in range(Ny)] for x in tsamx]
+    tsamx = np.unique(samx) # TODO: here we should do the same for y (... y in tsamy), because now it's assuming y \in {0, ..., Ny-1}
+    samy = [s[1] for s in sam]
+    tsamy = np.unique(samy)
+    nxy = [[sum(1 for s in sam if s[0] == x and s[1] == y) for y in tsamy] for x in tsamx]
     return np.array(nxy)
