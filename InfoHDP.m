@@ -242,9 +242,10 @@ genSamplesPriorT[pi_,pjdadoi_,M_,Ns_:10^4]:=Block[{sam,samx,nameXStates=Range[Ns
 	samx=RandomChoice[(pi//Abs)->nameXStates,M];
 	sam=Table[{samx[[m]],RandomChoice[(pjdadoi[[samx[[m]] ]]//Abs)-> Range[Ny]]},{m,M}];(*numerical fluctuactions may make some<0*)sam];
 
-nxysam[sam_,Ny_]:=Block[{nxy,samx,tsamx},samx=sam[[All,1]];
+nxysam[sam_,Ny_]:=Block[{nxy,samx,tsamx,yys},samx=sam[[All,1]];
 	tsamx=samx//Tally;
-	nxy=Table[Count[sam,{tsamx[[tt,1]],yy}],{yy,Ny},{tt,Length@tsamx}];
+	yys=(sam[[All,2]]//Tally)[[All,1]];
+	nxy=Table[Count[sam,{tsamx[[tt,1]],yy}],{yy,yys(*Ny*)},{tt,Length@tsamx}];
 	nxy//Transpose];
 logLbT[b_,qy_,nxy_]:=Block[{kx=Length@nxy,Ny=Length@qy,ll=0.},
 	ll=kx(LogGamma[b]-Sum[LogGamma[b qy[[j]]],{j,Ny}])+Sum[1.Sum[LogGamma[1.b qy[[j]]+nxy[[i,j]]],{j,Ny}]-LogGamma[b+(nxy[[i]]//Total) ],{i,kx}];
@@ -253,7 +254,7 @@ bsolT[qy_,nxy_]:=NArgMax[logLbT[Exp[ebb],qy,nxy],ebb,MaxIterations->1000]//Exp;
 SYconXT[bb_,nn_,qy_,nxy_]:=Block[{kx=Length@nxy,Ny=Length@qy,ss=0.},
 	ss=(1./nn)Sum[(nxy[[i]]//Total)(PolyGamma[(nxy[[i]]//Total)+bb+1.]-Sum[(bb qy[[j]]+nxy[[i,j]])PolyGamma[1.bb qy[[j]]+nxy[[i,j]]+1],{j,Ny}]/((nxy[[i]]//Total)+bb)),{i,Length@nxy}];
 	ss];
-IhdpMAPT[sam_,ML_:0]:= Block[{ihdp=0., b1=0., nn=Length@sam, ny=sam[[All,2]]//Max, nxy, qye, kx, n10, samx,
+IhdpMAPT[sam_,ML_:0]:= Block[{ihdp=0., b1=0., nn=Length@sam, ny=sam[[All,2]]//DeleteDuplicates//Length, nxy, qye, kx, n10, samx,
 	sycx=0., sy=0.},
 	nxy=nxysam[sam,ny];
 	qye=1.((nxy//Total)+1./ny)/((nxy//Flatten//Total)+1.);(*we have add SG correction to prob*)
