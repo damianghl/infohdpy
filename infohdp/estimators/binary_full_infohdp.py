@@ -49,7 +49,7 @@ class BinaryFullInfoHDPEstimator(BaseMutualInformationEstimator):
         
         sint = np.sum([BinaryInfoHDPEstimator.conditional_entropy_hyx(az, np.exp(eb), nn, n10) * ll for eb, ll in zip(listEb, listLogL)])
         s2int = np.sum([self.SYconX2(az, np.exp(eb), nn, n10) * ll for eb, ll in zip(listEb, listLogL)]) # TODO: recheck all sub-methods
-        dsint = np.sqrt(s2int - sint**2)
+        dsint = np.sqrt(s2int - sint**2) # TODO: here we take out sint**2, but inside SYconX2 we sum it up. Fix!!
         
         ihdp = sy - sint
         return ihdp, dsint
