@@ -45,7 +45,7 @@ class MulticlassFullInfoHDPEstimator(BaseMutualInformationEstimator):
         listLogL /= np.sum(listLogL)
         
         sint = np.sum([MulticlassInfoHDPEstimator.conditional_entropy_hyx_multiclass(np.exp(eb), nn, qye, nxy) * ll for eb, ll in zip(listEb, listLogL)])
-        #s2int = np.sum([self.SYconX2(az, np.exp(eb), nn, n10) * ll for eb, ll in zip(listEb, listLogL)]) # TODO: implement SYconX2T method
+        #s2int = np.sum([self.SYconX2T(np.exp(eb), nn, qye, nxy) * ll for eb, ll in zip(listEb, listLogL)]) # TODO: implement SYconX2T method
         #dsint = np.sqrt(s2int - sint**2)
         dsint = 0.0
         
