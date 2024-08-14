@@ -7,7 +7,7 @@ from ..core import entropy_true
 from .binary_infohdp import BinaryInfoHDPEstimator
 
 class BinaryFullInfoHDPEstimator(BaseMutualInformationEstimator):
-    def estimate_mutual_information(self, sam: Union[np.ndarray, List[Tuple[int, int]]], onlyb: int = 0, noprior: int = 0, ML: int = 1) -> Tuple[float, float]:
+    def estimate_mutual_information(self, sam: Union[np.ndarray, List[Tuple[int, int]]], onlyb: int = 1, noprior: int = 0, ML: int = 1) -> Tuple[float, float]:
         """
         Calculates the InfoHDP estimator and its error for mutual information by integrating over the peak of the posterior (only in beta).
 
@@ -110,7 +110,7 @@ class BinaryFullInfoHDPEstimator(BaseMutualInformationEstimator):
         ebu = np.log(bx) + nsig * sigeb
         return ebd, ebu
 
-    def SYconX2(self, aa, bb, nn, n10):
+    def SYconX2(self, aa, bb, nn, n10):# FIXME: varSYconX should depend on aa. As it is let keep alpha=0.
         """
         Calculates the second moment of S(Y|X) for fixed beta.
 
@@ -122,7 +122,7 @@ class BinaryFullInfoHDPEstimator(BaseMutualInformationEstimator):
         Returns:
             float: Second moment of S(Y|X).
         """
-        return self.varSYconX(bb, nn, n10) + (BinaryInfoHDPEstimator.conditional_entropy_hyx(aa, bb, nn, n10))**2
+        return self.varSYconX(bb, nn, n10) + (BinaryInfoHDPEstimator.conditional_entropy_hyx(aa, bb, nn, n10))**2 
 
     def varSYconX(self, bb, nn, n10):
         """
