@@ -48,8 +48,9 @@ class BinaryFullInfoHDPEstimator(BaseMutualInformationEstimator):
         listLogL /= np.sum(listLogL)
         
         sint = np.sum([BinaryInfoHDPEstimator.conditional_entropy_hyx(az, np.exp(eb), nn, n10) * ll for eb, ll in zip(listEb, listLogL)])
-        s2int = np.sum([self.SYconX2(az, np.exp(eb), nn, n10) * ll for eb, ll in zip(listEb, listLogL)]) # TODO: recheck all sub-methods
-        dsint = np.sqrt(s2int - sint**2) # TODO: here we take out sint**2, but inside SYconX2 we sum it up. Fix!!
+        s2int = np.sum([self.SYconX2(az, np.exp(eb), nn, n10) * ll for eb, ll in zip(listEb, listLogL)]) 
+        dsint = np.sqrt(s2int - sint**2) 
+        # okey: <dH^2>_q,b = <<H^2>_q|b>_b - (<H>_q,b)^2 = <<dH^2>_q|b>_b + <(<H>_q|b)^2>_b - (<H>_q,b)^2 = VarH_q|b + Var<H|b>
         
         ihdp = sy - sint
         return ihdp, dsint
@@ -110,7 +111,7 @@ class BinaryFullInfoHDPEstimator(BaseMutualInformationEstimator):
         ebu = np.log(bx) + nsig * sigeb
         return ebd, ebu
 
-    def SYconX2(self, aa, bb, nn, n10):# FIXME: varSYconX should depend on aa. As it is let keep alpha=0.
+    def SYconX2(self, aa, bb, nn, n10):# FIXME: varSYconX should depend on aa. As it is, let's keep alpha=0.
         """
         Calculates the second moment of S(Y|X) for fixed beta.
 
