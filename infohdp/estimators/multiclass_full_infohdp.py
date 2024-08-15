@@ -33,21 +33,17 @@ class MulticlassFullInfoHDPEstimator(BaseMutualInformationEstimator):
         
         b1 = MulticlassInfoHDPEstimator.beta_solve_multiclass(qye, nxy)
         sy = entropy_true(qye)
-        
-        # TODO: aca estamos
-        
+               
         logLbz = MulticlassInfoHDPEstimator.logprob_beta_multiclass(b1, qye, nxy)
         #ebd, ebu = self.intEb(bz, kx, n10, 3, noprior) # TODO: implement intEbT method with its corresponding D2expblogLT
-        ebd, ebu = np.log(b1)-3., np.log(b1)+3. # guessing here
+        ebd, ebu = np.log(b1)-3., np.log(b1)+3. # FIXME: guessing here
         listEb = np.linspace(ebd, ebu, 25)
-        #listLogL = np.exp(MulticlassInfoHDPEstimator.logprob_beta_multiclass(np.exp(listEb), qye, nxy) - logLbz)
         listLogL = np.exp(np.array([MulticlassInfoHDPEstimator.logprob_beta_multiclass(np.exp(eb), qye, nxy) for eb in listEb]) - logLbz)
         listLogL /= np.sum(listLogL)
         
         sint = np.sum([MulticlassInfoHDPEstimator.conditional_entropy_hyx_multiclass(np.exp(eb), nn, qye, nxy) * ll for eb, ll in zip(listEb, listLogL)])
-        #s2int = np.sum([self.SYconX2T(np.exp(eb), nn, qye, nxy) * ll for eb, ll in zip(listEb, listLogL)]) # TODO: implement SYconX2T method
-        #dsint = np.sqrt(s2int - sint**2)
-        dsint = 0.0
+        s2int = np.sum([self.SYconX2T(np.exp(eb), nn, qye, nxy) * ll for eb, ll in zip(listEb, listLogL)])
+        dsint = np.sqrt(s2int - sint**2)
         
         ihdp = sy - sint
         return ihdp, dsint
@@ -80,60 +76,74 @@ class MulticlassFullInfoHDPEstimator(BaseMutualInformationEstimator):
         Returns:
             float: Variance of S(Y|X).
         """
-        kx, Ny = nxy.shape
         dss = 0
-        #return (1 / (nn**2)) * sum((n1 + n0)**2 * self.varSYx(bb, n0, n1) for n1, n0 in n10)
 
-        for i in range(kx):
-            ni_sum = np.sum(nxy[i])
-            dss += (ni_sum / nn)**2 * self.varSYxT(bb, qy, nxy[i])
+        for nxyi in nxy:
+            ni_sum = np.sum(nxyi)
+            dss += (ni_sum / nn)**2 * self.varSYxT(bb, qy, nxyi)
         return dss
 
-
-    @staticmethod
-    def varSYxT(b, qy, nxyj):
+    def varSYxT(self, b: float, qy: np.ndarray, nxyj: np.ndarray):
         """
         Calculates the variance of S(Y|x) for fixed beta and a specific state x with counts n_xy.
 
         Args:
             b (float): Beta value.
+                        qy (np.ndarray): Marginal distribution for Y.
             nxyj (np.ndarray): Counts for state xj for different y=0,1,..., Ny-1.
 
         Returns:
             float: Variance of S(Y|x).
         """
         n = np.sum(nxyj)
+        r = n + b
+        ry =  b * qy + nxyj
 
-        hYx =  special.digamma(n + b + 1) - np.sum((b * qy + nxyj) * special.digamma(1 + b * qy + nxyj)) / (n + b)
+        hYx =  special.digamma(r + 1) - np.sum(ry * special.digamma(1 + ry)) / r
 
-        termJ = np.sum((b * qy + nxyj)(b * qy + nxyj + 1) * self.auxJy(b, n, qy, nxyj)) / ((n + b)*(n + b + 1))
-        termI = 0.
-        # termI = Sum_{y1!=y2} (b * qy1 + nxy1)(b * qy2 + nxy2 ) * self.auxIyy(b, n, qy1, nxy1, qy2, nxy2)
-        # termI /= ((n + b)*(n + b + 1))
+        termDiag = self.auxDiag(r, ry)
+        termI = self.auxIyy(r, ry)
         
-        return termI + termJ - hYx**2
+        return termI + termDiag - hYx**2
 
     @staticmethod
-    def auxIyy(b, nx, qy1, nxy1, qy2, nxy2):
-        ff = 0.
-        ff += (special.digamma(nxy1+b*qy1+1)-special.digamma(nx+b+2))(special.digamma(nxy2+b*qy2+1)-special.digamma(nx+b+2))
-        ff += -special.polygamma(1, nx + b + 2)
-        return ff
-
-    @staticmethod
-    def auxJy(b, nx, qy, nxyj):
+    def auxIyy(r: float, ry: np.ndarray):
         """
-        Calculates auxiliary function J_y as an array in y
+        Calculates auxiliary function for the cross term of H^2(Y|x)
 
         Args:
-            bb (float): Beta value.
-            nn (int): Total number of samples.
-            qy (np.ndarray): Marginal distribution for Y.
-            nxyj (np.ndarray): Counts for state xj for different y=0,1,..., Ny-1.
+            r (float): Some parameter, usually r = beta+ nx.
+            ry (np.ndarray): Input vector, usually ry = beta * qy+ (nx)y.
 
         Returns:
-            _type_: _description_
+            float: resutl of the cross term of H^2(Y|x)
         """
-        ff += (special.digamma(nxyj + b * qy + 2) - special.digamma(nx+b+2))**2
-        ff += special.polygamma(1, nxyj + b * qy + 2) - special.polygamma(1, nx + b + 2)
-        return ff
+        ry2 = ry *(special.digamma(ry + 1) - special.digamma(r+2))
+        Iyy1 = np.outer(ry2 , ry2)
+        Iyy2 = np.outer(ry, ry)
+        Iyy2 *= special.polygamma(1, r + 2)
+        Iyy = np.sum(Iyy1 - Iyy2)
+        Iyy /= r*(r + 1)
+        return Iyy
+
+    @staticmethod
+    def auxDiag(r: float, ry: np.ndarray):
+        """
+        Calculates auxiliary function for the diagonal term of H^2(Y|x)
+
+        Args:
+            r (float): Some parameter, usually r = beta+ nx.
+            ry (np.ndarray): Input vector, usually ry = beta * qy+ (nx)y.
+
+        Returns:
+            float: resutl of the diagonal term of H^2(Y|x)
+        """
+        Jy = (special.digamma(ry + 2) - special.digamma(r+2))**2
+        Jy += special.polygamma(1, ry + 2) - special.polygamma(1, r + 2)
+        Jy *= ry*(ry + 1)
+        Iyy = (special.digamma(ry + 1) - special.digamma(r+2))**2
+        Iyy += - special.polygamma(1, r + 2)
+        Iyy *= (ry)**2
+        diag = np.sum(Jy) + np.sum(Iyy)
+        diag /= r*(r + 1)
+        return diag
