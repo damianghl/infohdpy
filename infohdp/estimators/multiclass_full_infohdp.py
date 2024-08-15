@@ -43,7 +43,7 @@ class MulticlassFullInfoHDPEstimator(BaseMutualInformationEstimator):
         
         sint = np.sum([MulticlassInfoHDPEstimator.conditional_entropy_hyx_multiclass(np.exp(eb), nn, qye, nxy) * ll for eb, ll in zip(listEb, listLogL)])
         s2int = np.sum([self.SYconX2T(np.exp(eb), nn, qye, nxy) * ll for eb, ll in zip(listEb, listLogL)])
-        dsint = np.sqrt(s2int - sint**2)
+        dsint = np.sqrt(s2int - sint**2) # FIXME:  this give me an error for sqrt, check that this variance is >0
         
         ihdp = sy - sint
         return ihdp, dsint
