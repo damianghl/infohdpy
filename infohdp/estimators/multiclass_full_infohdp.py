@@ -35,8 +35,8 @@ class MulticlassFullInfoHDPEstimator(BaseMutualInformationEstimator):
         sy = entropy_true(qye)
                
         logLbz = MulticlassInfoHDPEstimator.logprob_beta_multiclass(b1, qye, nxy)
-        #ebd, ebu = self.intEb(bz, kx, n10, 3, noprior) # TODO: implement intEbT method with its corresponding D2expblogLT
-        ebd, ebu = np.log(b1)-3., np.log(b1)+3. # FIXME: guessing here
+        ebd, ebu = self.intEbT(b1, qye, nxy, 3) # TODO: implement intEbT method with its corresponding D2expblogLT
+        #ebd, ebu = np.log(b1)-3., np.log(b1)+3. # FIXME: guessing here
         listEb = np.linspace(ebd, ebu, 25)
         listLogL = np.exp(np.array([MulticlassInfoHDPEstimator.logprob_beta_multiclass(np.exp(eb), qye, nxy) for eb in listEb]) - logLbz)
         listLogL /= np.sum(listLogL)
@@ -47,6 +47,51 @@ class MulticlassFullInfoHDPEstimator(BaseMutualInformationEstimator):
         
         ihdp = sy - sint
         return ihdp, dsint
+
+    @staticmethod
+    def D2expblogLT(eb: float, qy: np.ndarray, nxy: np.ndarray):
+        """
+        Calculates the second derivative of log-likelihood of beta with respect to log(beta).
+
+        Args:
+            eb (float): Exponential of beta value.
+            qy (np.ndarray): Marginal distribution for Y.
+            nxy (np.ndarray): Count matrix from nxysam.
+
+        Returns:
+            float: Second derivative of log-likelihood.
+        """
+        nx = np.sum(nxy, axis=1)
+        b = np.exp(eb)
+
+        ll2 = 0.
+        ll2 = np.sum( b*(special.digamma(b)-special.digamma(b + nx)) + b**2 *(special.polygamma(1, b)-special.polygamma(1, b + nx)))
+
+        for nxyi in nxy:
+            nxi = np.sum(nxyi)
+            ll2 += b* np.sum(qy* (special.digamma(nxyi + b * qy) - special.digamma(b * qy)))
+            ll2 += b**2 * np.sum(qy**2 * (special.polygamma(1, nxyi + b * qy) - special.polygamma(1, b * qy)))
+        
+        return ll2
+
+    def intEbT(self, bx: float , qy: np.ndarray, nxy: np.ndarray, nsig=3):
+        """
+        Calculates the interval for integration in log(beta).
+
+        Args:
+            bx (float): Beta value.
+            qy (np.ndarray): Marginal distribution for Y.
+            nxy (np.ndarray): Count matrix from nxysam.
+            nsig (float, optional): Number of standard deviations. Defaults to 3.
+
+        Returns:
+            Tuple[float, float]: Lower and upper bounds of the integration interval.
+        """
+        sigeb = np.sqrt(-self.D2expblogLT(np.log(bx), qy, nxy))
+        ebd = np.log(bx) - nsig * sigeb
+        ebu = np.log(bx) + nsig * sigeb
+        return ebd, ebu
+
 
     def SYconX2T(self, bb: float, nn: int, qy: np.ndarray, nxy: np.ndarray):
         """
