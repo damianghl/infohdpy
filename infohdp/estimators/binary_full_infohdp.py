@@ -7,7 +7,7 @@ from ..core import entropy_true
 from .binary_infohdp import BinaryInfoHDPEstimator
 
 class BinaryFullInfoHDPEstimator(BaseMutualInformationEstimator):
-    def estimate_mutual_information(self, sam: Union[np.ndarray, List[Tuple[int, int]]], onlyb: int = 0, noprior: int = 0, ML: int = 1) -> Tuple[float, float]:
+    def estimate_mutual_information(self, sam: Union[np.ndarray, List[Tuple[int, int]]], onlyb: int = 1, noprior: int = 0, ML: int = 1) -> Tuple[float, float]:
         """
         Calculates the InfoHDP estimator and its error for mutual information by integrating over the peak of the posterior (only in beta).
 
@@ -21,27 +21,6 @@ class BinaryFullInfoHDPEstimator(BaseMutualInformationEstimator):
         Returns:
             Tuple[float, float]: Estimated mutual information and its standard deviation.
         """
-        # nn = len(sam)
-        # a1 = 0
-        
-        # if onlyb != 1:
-        #     kk = len(np.unique(sam))
-        #     a1 = BinaryInfoHDPEstimator.alpha_solve(nn, kk)  # Note: You need to implement asol method or import it
-        
-        # samx = np.abs(sam)
-        # kx = len(np.unique(samx))
-        # n10 = count_nxy_binary(sam)
-        
-        # if ML == 1:
-        #     qye = np.sum(n10, axis=0) / np.sum(n10)
-        # else:
-        #     qye = (np.sum(n10, axis=0) + 1/2) / (np.sum(n10) + 1)
-        
-        # b1 = BinaryInfoHDPEstimator.beta_solve(kx, n10, noprior) 
-        # sy = entropy_true(qye)
-        # sycx = BinaryInfoHDPEstimator.conditional_entropy_hyx(a1, b1, nn, n10)
-        
-        # ihdp = sy - sycx
 
         nn = len(sam)
         az = 0
@@ -69,8 +48,9 @@ class BinaryFullInfoHDPEstimator(BaseMutualInformationEstimator):
         listLogL /= np.sum(listLogL)
         
         sint = np.sum([BinaryInfoHDPEstimator.conditional_entropy_hyx(az, np.exp(eb), nn, n10) * ll for eb, ll in zip(listEb, listLogL)])
-        s2int = np.sum([self.SYconX2(np.exp(eb), nn, n10) * ll for eb, ll in zip(listEb, listLogL)]) # TODO: aca me quede
-        dsint = np.sqrt(s2int - sint**2)
+        s2int = np.sum([self.SYconX2(az, np.exp(eb), nn, n10) * ll for eb, ll in zip(listEb, listLogL)]) 
+        dsint = np.sqrt(s2int - sint**2) 
+        # okey: <dH^2>_q,b = <<H^2>_q|b>_b - (<H>_q,b)^2 = <<dH^2>_q|b>_b + <(<H>_q|b)^2>_b - (<H>_q,b)^2 = VarH_q|b + Var<H|b>
         
         ihdp = sy - sint
         return ihdp, dsint
@@ -131,7 +111,7 @@ class BinaryFullInfoHDPEstimator(BaseMutualInformationEstimator):
         ebu = np.log(bx) + nsig * sigeb
         return ebd, ebu
 
-    def SYconX2(self, bb, nn, n10):
+    def SYconX2(self, aa, bb, nn, n10):# FIXME: varSYconX should depend on aa. As it is, let's keep alpha=0.
         """
         Calculates the second moment of S(Y|X) for fixed beta.
 
@@ -143,7 +123,7 @@ class BinaryFullInfoHDPEstimator(BaseMutualInformationEstimator):
         Returns:
             float: Second moment of S(Y|X).
         """
-        return self.varSYconX(bb, nn, n10) + (BinaryInfoHDPEstimator.conditional_entropy_hyx(0., bb, nn, n10))**2
+        return self.varSYconX(bb, nn, n10) + (BinaryInfoHDPEstimator.conditional_entropy_hyx(aa, bb, nn, n10))**2 
 
     def varSYconX(self, bb, nn, n10):
         """

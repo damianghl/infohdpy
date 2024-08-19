@@ -44,6 +44,6 @@ class NSBEstimator(BaseEstimator):
         Hxy, dHxy = self.estimate_entropy(samples)
         
         Ixy = Hx + Hy - Hxy
-        dIxy = np.sqrt(dHx**2 + dHy**2 + dHxy**2)
+        dIxy = np.sqrt(dHx**2 + dHy**2 + dHxy**2) # TODO: this is overestimating error, assuming they are independent (which is false Var(X+Y)=... rho)
         
         return Ixy, dIxy
