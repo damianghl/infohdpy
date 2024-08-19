@@ -1,4 +1,4 @@
-# info-estimation
+# infohdpy: Python package for mutual information estimation using Hierarchical Dirichlet Priors
 Estimating the mutual information between discrete variables with limited samples. This is the code for the paper https://www.mdpi.com/1099-4300/21/6/623.
 
 
