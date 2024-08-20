@@ -4,6 +4,9 @@ Estimating the mutual information between discrete variables with limited sample
 
 ![](https://github.com/dghernandez/info-estimation/blob/master/scheme2.jpg)
 
+# Installation and requirements
+
+# Basic usage
 
 # Core calculations and conditions
 The main parts of the code are rather simple and they can be implemented in any programming language: (1) a maximization of the marginal log-likelihood (or posterior) over the hyperparameter beta, and (2) the evaluation of the posterior information in such beta. 
