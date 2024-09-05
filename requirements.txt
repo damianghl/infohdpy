@@ -3,3 +3,4 @@ scipy
 matplotlib
 ndd
 pandas
+jupyter
