@@ -29,7 +29,7 @@ Estimating the mutual information between discrete variables with limited sample
 # Import
 from infohdp.estimators import MulticlassFullInfoHDPEstimator
 
-# Create instances of Estimator for multiclass case
+# Create an instance of Estimator for multiclass case
 estimator = MulticlassFullInfoHDPEstimator()
 
 # Samples in format [(x_0, y_0), (x_1, y_1), (x_2, y_2), ...]
