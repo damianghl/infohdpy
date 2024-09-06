@@ -6,6 +6,23 @@ Estimating the mutual information between discrete variables with limited sample
 
 # Installation and requirements
 
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/dghernandez/info-estimation.git
+   cd info-estimation
+   ```
+
+2. **Check and Install Requirements**:
+   ```bash
+   python --version
+   pip install -r requirements.txt
+   ```
+
+3. **Install the Package**:
+   ```bash
+   pip install -e .
+   ```
+
 # Basic usage
 
 # Core calculations and conditions
