@@ -25,6 +25,20 @@ Estimating the mutual information between discrete variables with limited sample
 
 # Basic usage
 
+```python
+# Import
+from infohdp.estimators import MulticlassFullInfoHDPEstimator
+
+# Create instances of Estimator for multiclass case
+estimator = MulticlassFullInfoHDPEstimator()
+
+# Samples in format [(x_0, y_0), (x_1, y_1), (x_2, y_2), ...]
+samples = [(15, 1), (35, 0), (2, 0), (29, 1), (35, 0), (35, 0), (21, 1), (21, 0), (29, 1), (21, 1)]
+
+i_hdp, di_hdp = estimator.estimate_mutual_information(samples)
+print(f"Ihdp full multiclass, mutual information estimation [nats]: {i_hdp:.4f} ± {di_hdp:.4f}")
+```
+
 # Core calculations and conditions
 The main parts of the code are rather simple and they can be implemented in any programming language: (1) a maximization of the marginal log-likelihood (or posterior) over the hyperparameter beta, and (2) the evaluation of the posterior information in such beta. 
 
