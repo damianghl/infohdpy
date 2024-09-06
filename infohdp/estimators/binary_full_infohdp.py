@@ -48,7 +48,7 @@ class BinaryFullInfoHDPEstimator(BaseMutualInformationEstimator):
         listLogL /= np.sum(listLogL)
         
         sint = np.sum([BinaryInfoHDPEstimator.conditional_entropy_hyx(az, np.exp(eb), nn, n10) * ll for eb, ll in zip(listEb, listLogL)])
-        s2int = np.sum([self.SYconX2(az, np.exp(eb), nn, n10) * ll for eb, ll in zip(listEb, listLogL)]) 
+        s2int = np.sum([self.SYconX2(az, np.exp(eb), nn, n10) * ll for eb, ll in zip(listEb, listLogL)])
         dsint = np.sqrt(s2int - sint**2) 
         # okey: <dH^2>_q,b = <<H^2>_q|b>_b - (<H>_q,b)^2 = <<dH^2>_q|b>_b + <(<H>_q|b)^2>_b - (<H>_q,b)^2 = VarH_q|b + Var<H|b>
         

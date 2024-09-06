@@ -35,15 +35,14 @@ class MulticlassFullInfoHDPEstimator(BaseMutualInformationEstimator):
         sy = entropy_true(qye)
                
         logLbz = MulticlassInfoHDPEstimator.logprob_beta_multiclass(b1, qye, nxy)
-        ebd, ebu = self.intEbT(b1, qye, nxy, 3) # TODO: implement intEbT method with its corresponding D2expblogLT
-        #ebd, ebu = np.log(b1)-3., np.log(b1)+3. # FIXME: guessing here
+        ebd, ebu = self.intEbT(b1, qye, nxy, 3)
         listEb = np.linspace(ebd, ebu, 25)
         listLogL = np.exp(np.array([MulticlassInfoHDPEstimator.logprob_beta_multiclass(np.exp(eb), qye, nxy) for eb in listEb]) - logLbz)
-        listLogL /= np.sum(listLogL)
+        listLogL /= np.sum(listLogL) #probabilities vector seems normalized, cool
         
         sint = np.sum([MulticlassInfoHDPEstimator.conditional_entropy_hyx_multiclass(np.exp(eb), nn, qye, nxy) * ll for eb, ll in zip(listEb, listLogL)])
         s2int = np.sum([self.SYconX2T(np.exp(eb), nn, qye, nxy) * ll for eb, ll in zip(listEb, listLogL)])
-        dsint = np.sqrt(s2int - sint**2) # FIXME:  this give me an error for sqrt, check that this variance is >0
+        dsint = np.sqrt(s2int - sint**2)
         
         ihdp = sy - sint
         return ihdp, dsint
@@ -186,9 +185,6 @@ class MulticlassFullInfoHDPEstimator(BaseMutualInformationEstimator):
         Jy = (special.digamma(ry + 2) - special.digamma(r+2))**2
         Jy += special.polygamma(1, ry + 2) - special.polygamma(1, r + 2)
         Jy *= ry*(ry + 1)
-        Iyy = (special.digamma(ry + 1) - special.digamma(r+2))**2
-        Iyy += - special.polygamma(1, r + 2)
-        Iyy *= (ry)**2
-        diag = np.sum(Jy) + np.sum(Iyy)
+        diag = np.sum(Jy)
         diag /= r*(r + 1)
         return diag
