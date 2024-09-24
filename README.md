@@ -1,5 +1,5 @@
 # infohdpy: Python package for mutual information estimation using Hierarchical Dirichlet Priors
-Estimating the mutual information between discrete variables with limited samples. This is the code for the paper https://www.mdpi.com/1099-4300/21/6/623.
+Estimating the mutual information between discrete variables with limited samples.
 
 
 ![](https://github.com/dghernandez/info-estimation/blob/master/scheme2.jpg)
@@ -47,4 +47,4 @@ First, we need to obtain the ML (or MAP) estimate for the hyperparameter beta (f
 Our method needs coincidences on the large entropy variable X, which starts to happen when N> exp(H(X)/2). If there are no coincidences, then the marginal likelihood is flat on beta. If there are few coincidences and no prior on beta is used, the maximum may be attained for beta tending to zero or infinity. In such cases the posterior information is still well-defined and takes the values of H(Y) or zero, respectively.
 
 This page is maintained by Damián G. Hernández.
-(email address in paper link)
+(email address in paper https://www.mdpi.com/1099-4300/21/6/623)
