@@ -10,3 +10,6 @@ authors:
   - given-names: Damián G.
     family-names: Hernández
 date-released: 2024-09-06
+identifiers:
+  - type: url
+    value: 'https://github.com/damianghl/infohdpy'
