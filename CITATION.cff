@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+title: >-
+  infohdp: Python Package For Mutual Information Estimation
+  Using Hierarchical Dirichlet Priors
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Damián G.
+    family-names: Hernández
+date-released: 2024-09-06
